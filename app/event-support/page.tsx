@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 
 // Each row in the Dhwani requirements table
 type DhwaniRow = { item: string; quantity: string };
@@ -66,10 +65,10 @@ export default function EventSupport() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#0a0f1a" }}>
+    <div className="min-h-screen">
 
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="rounded-2xl p-8 border border-white/10" style={{ backgroundColor: "#111827" }}>
+        <div className="rounded-2xl p-8 border border-white/10">
           <h1 className="text-2xl font-bold text-white mb-1">Request Event Support</h1>
           <p className="text-gray-300 text-sm mb-8">
             Fill in your event details and select which departments you need.
@@ -94,40 +93,40 @@ export default function EventSupport() {
 
               {/* Basic event details */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300">Event Name</label>
+                <label className="text-sm text-gray-300" htmlFor="eventName">Event Name</label>
                 <input
+                  id="eventName"
                   type="text"
                   placeholder="Annual Cultural Fest"
                   className="rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500"
-                  style={{ backgroundColor: "#1e2a3a" }}
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300">Organizer Name</label>
+                <label className="text-sm text-gray-300" htmlFor="organizerName">Organizer Name</label>
                 <input
+                  id="organizerName"
                   type="text"
                   placeholder="Your name"
                   className="rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500"
-                  style={{ backgroundColor: "#1e2a3a" }}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm text-gray-300">Event Date</label>
+                  <label className="text-sm text-gray-300" htmlFor="eventDate">Event Date</label>
                   <input
+                    id="eventDate"
                     type="date"
                     className="rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500"
-                    style={{ backgroundColor: "#1e2a3a" }}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm text-gray-300">Event Time</label>
+                  <label className="text-sm text-gray-300" htmlFor="eventTime">Event Time</label>
                   <input
+                    id="eventTime"
                     type="time"
                     className="rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500"
-                    style={{ backgroundColor: "#1e2a3a" }}
                   />
                 </div>
               </div>
@@ -138,7 +137,7 @@ export default function EventSupport() {
                 <p className="text-gray-500 text-xs">Select one or more — each will expand with specific requirements</p>
 
                 {/* Dhwani checkbox */}
-                <label className="flex items-center gap-3 cursor-pointer border border-white/10 rounded-xl px-4 py-3" style={{ backgroundColor: "#1e2a3a" }}>
+                <label className="flex items-center gap-3 cursor-pointer border border-white/10 rounded-xl px-4 py-3">
                   <input
                     type="checkbox"
                     checked={dhwani}
@@ -153,7 +152,7 @@ export default function EventSupport() {
 
                 {/* Dhwani expanded section */}
                 {dhwani && (
-                  <div className="border border-white/10 rounded-xl p-4 flex flex-col gap-3" style={{ backgroundColor: "#0a0f1a" }}>
+                  <div className="border border-white/10 rounded-xl p-4 flex flex-col gap-3">
                     <p className="text-sm text-gray-300 font-medium">List your audio requirements</p>
                     <p className="text-gray-500 text-xs">Add each item and how many you need. Examples: Singers, Tabla, Guitar, Wireless mic, DJ setup</p>
 
@@ -172,8 +171,8 @@ export default function EventSupport() {
                           value={row.item}
                           onChange={(e) => updateDhwaniRow(index, "item", e.target.value)}
                           placeholder="e.g. Singers, Tabla, Guitar"
+                          aria-label={`Dhwani item ${index + 1}`}
                           className="col-span-7 rounded-lg px-3 py-2 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500"
-                          style={{ backgroundColor: "#1e2a3a" }}
                         />
                         <input
                           type="number"
@@ -181,8 +180,8 @@ export default function EventSupport() {
                           onChange={(e) => updateDhwaniRow(index, "quantity", e.target.value)}
                           placeholder="0"
                           min="1"
+                          aria-label={`Dhwani quantity ${index + 1}`}
                           className="col-span-3 rounded-lg px-3 py-2 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500"
-                          style={{ backgroundColor: "#1e2a3a" }}
                         />
                         {/* Only show remove if more than 1 row */}
                         {dhwaniRows.length > 1 ? (
@@ -209,7 +208,7 @@ export default function EventSupport() {
                 )}
 
                 {/* Prakash checkbox */}
-                <label className="flex items-center gap-3 cursor-pointer border border-white/10 rounded-xl px-4 py-3" style={{ backgroundColor: "#1e2a3a" }}>
+                <label className="flex items-center gap-3 cursor-pointer border border-white/10 rounded-xl px-4 py-3">
                   <input
                     type="checkbox"
                     checked={prakash}
@@ -224,18 +223,18 @@ export default function EventSupport() {
 
                 {/* Prakash expanded section */}
                 {prakash && (
-                  <div className="border border-white/10 rounded-xl p-4 flex flex-col gap-4" style={{ backgroundColor: "#0a0f1a" }}>
+                  <div className="border border-white/10 rounded-xl p-4 flex flex-col gap-4">
                     <p className="text-sm text-gray-300 font-medium">Lighting requirements</p>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs text-gray-400">Venue / Stage location</label>
+                      <label className="text-xs text-gray-400" htmlFor="lightingVenue">Venue / Stage location</label>
                       <input
+                        id="lightingVenue"
                         type="text"
                         value={venue}
                         onChange={(e) => setVenue(e.target.value)}
                         placeholder="e.g. Main auditorium stage, Open ground, SAC hall"
                         className="rounded-lg px-3 py-2 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500"
-                        style={{ backgroundColor: "#1e2a3a" }}
                       />
                     </div>
 
@@ -252,7 +251,6 @@ export default function EventSupport() {
                           <label
                             key={opt.value}
                             className="flex items-start gap-3 cursor-pointer border border-white/10 rounded-lg px-3 py-2"
-                            style={{ backgroundColor: "#1e2a3a" }}
                           >
                             <input
                               type="checkbox"
@@ -272,7 +270,7 @@ export default function EventSupport() {
                 )}
 
                 {/* Kriti checkbox */}
-                <label className="flex items-center gap-3 cursor-pointer border border-white/10 rounded-xl px-4 py-3" style={{ backgroundColor: "#1e2a3a" }}>
+                <label className="flex items-center gap-3 cursor-pointer border border-white/10 rounded-xl px-4 py-3">
                   <input
                     type="checkbox"
                     checked={kriti}
@@ -287,16 +285,17 @@ export default function EventSupport() {
 
                 {/* Kriti expanded section */}
                 {kriti && (
-                  <div className="border border-white/10 rounded-xl p-4 flex flex-col gap-3" style={{ backgroundColor: "#0a0f1a" }}>
+                  <div className="border border-white/10 rounded-xl p-4 flex flex-col gap-3">
                     <p className="text-sm text-gray-300 font-medium">List what you need</p>
                     <p className="text-gray-500 text-xs">Describe stage setup, props, backdrops, or any fabrication requirements</p>
+                    <label className="sr-only" htmlFor="kritiNeeds">Kriti requirements</label>
                     <textarea
+                      id="kritiNeeds"
                       rows={5}
                       value={kritiNeeds}
                       onChange={(e) => setKritiNeeds(e.target.value)}
                       placeholder={`Example:\n- Stage platform 20x10 ft\n- Backdrop with college logo\n- 2 podiums\n- Seating arrangement for 200`}
                       className="rounded-lg px-3 py-2 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500 resize-none"
-                      style={{ backgroundColor: "#1e2a3a" }}
                     />
                   </div>
                 )}
@@ -304,15 +303,15 @@ export default function EventSupport() {
 
               {/* Additional notes */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300">
+                <label className="text-sm text-gray-300" htmlFor="additionalNotes">
                   Additional Notes
                   <span className="text-gray-500 ml-1">(optional)</span>
                 </label>
                 <textarea
+                  id="additionalNotes"
                   rows={3}
                   placeholder="Anything else the team should know..."
                   className="rounded-xl px-4 py-3 text-sm text-white border border-white/10 focus:outline-none focus:border-blue-500 resize-none"
-                  style={{ backgroundColor: "#1e2a3a" }}
                 />
               </div>
 

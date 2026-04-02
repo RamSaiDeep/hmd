@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 
 type Complaint = {
   id: number;
@@ -158,6 +157,7 @@ export default function AdminDashboard() {
                     <select
                       value={c.status}
                       onChange={(e) => updateComplaint(c.id, "status", e.target.value)}
+                      aria-label={`Complaint ${c.id} status`}
                     >
                       {statusOptions.map((s) => (
                         <option key={s} value={s}>{s}</option>
@@ -168,6 +168,7 @@ export default function AdminDashboard() {
                     <select
                       value={c.priority}
                       onChange={(e) => updateComplaint(c.id, "priority", e.target.value)}
+                      aria-label={`Complaint ${c.id} priority`}
                     >
                       {priorityOptions.map((p) => (
                         <option key={p} value={p}>{p}</option>
@@ -258,7 +259,6 @@ export default function AdminDashboard() {
                           value={responseText}
                           onChange={(e) => setResponseText(e.target.value)}
                           placeholder="e.g. We can provide 2 wireless mics. For lighting warm white is available..."
-                          style={{ width: "100%" }}
                         />
                         <br />
                         <button onClick={() => saveEventResponse(e.id)}>

@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 
 // Program types for non-festival events
 const programTypes = ["Dance", "Drama", "Cultural Event", "Sports Event", "Workshop", "Other"];
@@ -153,9 +152,10 @@ export default function HostelPrograms() {
           <br />
 
           <div>
-            <label>Organizer Name</label>
+            <label htmlFor="organizerName">Organizer Name</label>
             <br />
             <input
+              id="organizerName"
               type="text"
               value={organizerName}
               onChange={(e) => setOrganizerName(e.target.value)}
@@ -166,17 +166,19 @@ export default function HostelPrograms() {
           <br />
 
           <div>
-            <label>Date *</label>
+            <label htmlFor="eventDate">Date *</label>
             <br />
             <input
+              id="eventDate"
               type="date"
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
             />
             &nbsp;&nbsp;
-            <label>Time</label>
+            <label htmlFor="eventTime">Time</label>
             &nbsp;
             <input
+              id="eventTime"
               type="time"
               value={eventTime}
               onChange={(e) => setEventTime(e.target.value)}
@@ -186,9 +188,10 @@ export default function HostelPrograms() {
           <br />
 
           <div>
-            <label>Venue</label>
+            <label htmlFor="venue">Venue</label>
             <br />
             <input
+              id="venue"
               type="text"
               value={venue}
               onChange={(e) => setVenue(e.target.value)}
@@ -277,7 +280,6 @@ export default function HostelPrograms() {
                               onChange={(e) => updateSoundRow(index, "quantity", e.target.value)}
                               placeholder="0"
                               min="1"
-                              style={{ width: "60px" }}
                             />
                           </td>
                           <td>
@@ -362,9 +364,10 @@ export default function HostelPrograms() {
               <h2>Program Details</h2>
 
               <div>
-                <label>Program Type *</label>
+                <label htmlFor="programType">Program Type *</label>
                 <br />
                 <select
+                  id="programType"
                   value={programType}
                   onChange={(e) => setProgramType(e.target.value)}
                 >
@@ -378,14 +381,14 @@ export default function HostelPrograms() {
               <br />
 
               <div>
-                <label>What support do you need?</label>
+                <label htmlFor="programDescription">What support do you need?</label>
                 <br />
                 <textarea
+                  id="programDescription"
                   rows={4}
                   value={programDescription}
                   onChange={(e) => setProgramDescription(e.target.value)}
                   placeholder="Describe what you need — sound system, lighting, stage setup, chairs, etc."
-                  style={{ width: "100%" }}
                 />
               </div>
             </div>

@@ -114,16 +114,16 @@ function LoginContent() {
       <h1>{mode === "login" ? "Login" : "Sign Up"}</h1>
 
       {verified && (
-        <p style={{ color: "green" }}>✅ Email verified! You can now log in.</p>
+        <p role="status">✅ Email verified! You can now log in.</p>
       )}
       {urlError && (
-        <p style={{ color: "red" }}>❌ {urlError}</p>
+        <p role="alert">❌ {urlError}</p>
       )}
       {error && (
-        <p style={{ color: "red" }}>❌ {error}</p>
+        <p role="alert">❌ {error}</p>
       )}
       {success && (
-        <p style={{ color: "green" }}>✅ {success}</p>
+        <p role="status">✅ {success}</p>
       )}
 
       <div>
@@ -140,9 +140,10 @@ function LoginContent() {
       {mode === "signup" && (
         <>
           <div>
-            <label>Full Name *</label>
+            <label htmlFor="fullName">Full Name *</label>
             <br />
             <input
+              id="fullName"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -151,9 +152,10 @@ function LoginContent() {
           </div>
           <br />
           <div>
-            <label>Room Number</label>
+            <label htmlFor="roomNumber">Room Number</label>
             <br />
             <input
+              id="roomNumber"
               type="text"
               value={room}
               onChange={(e) => setRoom(e.target.value)}
@@ -162,9 +164,10 @@ function LoginContent() {
           </div>
           <br />
           <div>
-            <label>Phone Number</label>
+            <label htmlFor="phoneNumber">Phone Number</label>
             <br />
             <input
+              id="phoneNumber"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -176,9 +179,10 @@ function LoginContent() {
       )}
 
       <div>
-        <label>Email *</label>
+        <label htmlFor="email">Email *</label>
         <br />
         <input
+          id="email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -188,9 +192,10 @@ function LoginContent() {
       <br />
 
       <div>
-        <label>Password *</label>
+        <label htmlFor="password">Password *</label>
         <br />
         <input
+          id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -202,9 +207,10 @@ function LoginContent() {
       {mode === "signup" && (
         <>
           <div>
-            <label>Confirm Password *</label>
+            <label htmlFor="confirmPassword">Confirm Password *</label>
             <br />
             <input
+              id="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 
 type DhwaniRow = { item: string; quantity: string };
 
@@ -140,9 +139,10 @@ export default function MusicPrograms() {
           <br />
 
           <div>
-            <label>Organizer Name</label>
+            <label htmlFor="organizerName">Organizer Name</label>
             <br />
             <input
+              id="organizerName"
               type="text"
               value={organizerName}
               onChange={(e) => setOrganizerName(e.target.value)}
@@ -153,17 +153,19 @@ export default function MusicPrograms() {
           <br />
 
           <div>
-            <label>Date *</label>
+            <label htmlFor="eventDate">Date *</label>
             &nbsp;
             <input
+              id="eventDate"
               type="date"
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
             />
             &nbsp;&nbsp;
-            <label>Time</label>
+            <label htmlFor="eventTime">Time</label>
             &nbsp;
             <input
+              id="eventTime"
               type="time"
               value={eventTime}
               onChange={(e) => setEventTime(e.target.value)}
@@ -173,9 +175,10 @@ export default function MusicPrograms() {
           <br />
 
           <div>
-            <label>Venue *</label>
+            <label htmlFor="venue">Venue *</label>
             <br />
             <input
+              id="venue"
               type="text"
               value={venue}
               onChange={(e) => setVenue(e.target.value)}
@@ -216,7 +219,6 @@ export default function MusicPrograms() {
                         onChange={(e) => updateSoundRow(index, "quantity", e.target.value)}
                         placeholder="0"
                         min="1"
-                        style={{ width: "60px" }}
                       />
                     </td>
                     <td>
@@ -268,14 +270,14 @@ export default function MusicPrograms() {
 
           {/* Additional notes */}
           <div>
-            <label>Additional Notes (optional)</label>
+            <label htmlFor="notes">Additional Notes (optional)</label>
             <br />
             <textarea
+              id="notes"
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Anything else the team should know..."
-              style={{ width: "100%" }}
             />
           </div>
 

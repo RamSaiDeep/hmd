@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
 
 const issueTypes = ["Electrical", "Fan", "Light", "Switch", "Cupboard", "Lock", "Other"];
 
@@ -35,10 +35,10 @@ export default function RegisterComplaint() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#0a0f1a" }}>
+    <div className="min-h-screen">
 
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="rounded-2xl p-8 border border-white/10" style={{ backgroundColor: "#111827" }}>
+        <div className="rounded-2xl p-8 border border-white/10">
           <h1 className="text-2xl font-bold text-white mb-1">Register a Complaint</h1>
           <p className="text-gray-300 text-sm mb-8">Fill in the details and our team will get back to you.</p>
 
@@ -59,28 +59,28 @@ export default function RegisterComplaint() {
 
               {/* Room / Place - pre-filled from user profile */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300">
+                <label className="text-sm text-gray-300" htmlFor="place">
                   Room Number / Place
                   <span className="text-gray-500 ml-1">(pre-filled from your profile, change if needed)</span>
                 </label>
                 <input
+                  id="place"
                   type="text"
                   value={place}
                   onChange={(e) => setPlace(e.target.value)}
                   placeholder="e.g. A-204, Common Room, Corridor B"
                   className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition"
-                  style={{ backgroundColor: "#1e2a3a" }}
                 />
               </div>
 
               {/* Issue type */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300">Issue Type</label>
+                <label className="text-sm text-gray-300" htmlFor="issueType">Issue Type</label>
                 <select
+                  id="issueType"
                   value={issueType}
                   onChange={(e) => setIssueType(e.target.value)}
                   className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition"
-                  style={{ backgroundColor: "#1e2a3a" }}
                 >
                   <option value="">Select an issue type</option>
                   {issueTypes.map((type) => (
@@ -92,27 +92,27 @@ export default function RegisterComplaint() {
               {/* Extra description only if Other */}
               {issueType === "Other" && (
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm text-gray-300">Describe the Issue</label>
+                  <label className="text-sm text-gray-300" htmlFor="issueDescription">Describe the Issue</label>
                   <textarea
+                    id="issueDescription"
                     rows={3}
                     placeholder="Describe what the issue is..."
                     className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition resize-none"
-                    style={{ backgroundColor: "#1e2a3a" }}
                   />
                 </div>
               )}
 
               {/* Additional details */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300">
+                <label className="text-sm text-gray-300" htmlFor="additionalDetails">
                   Additional Details
                   <span className="text-gray-500 ml-1">(optional)</span>
                 </label>
                 <textarea
+                  id="additionalDetails"
                   rows={3}
                   placeholder="Any extra information that might help..."
                   className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition resize-none"
-                  style={{ backgroundColor: "#1e2a3a" }}
                 />
               </div>
 
@@ -124,7 +124,6 @@ export default function RegisterComplaint() {
                 </label>
                 <label
                   className="flex flex-col items-center justify-center border border-dashed border-white/20 rounded-xl py-8 cursor-pointer hover:border-blue-500/50 transition"
-                  style={{ backgroundColor: "#1e2a3a" }}
                 >
                   <input
                     type="file"
@@ -133,7 +132,14 @@ export default function RegisterComplaint() {
                     className="hidden"
                   />
                   {photoPreview ? (
-                    <img src={photoPreview} alt="Preview" className="max-h-48 rounded-lg object-contain" />
+                    <Image
+                      src={photoPreview}
+                      alt="Preview"
+                      width={512}
+                      height={512}
+                      className="max-h-48 rounded-lg object-contain"
+                      unoptimized
+                    />
                   ) : (
                     <>
                       <span className="text-3xl mb-2">📷</span>

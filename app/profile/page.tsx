@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [room, setRoom] = useState("");
@@ -13,7 +14,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     async function getUser() {
@@ -34,7 +35,7 @@ export default function ProfilePage() {
     }
 
     getUser();
-  }, []);
+  }, [router, supabase.auth]);
 
   async function handleSave() {
     setSaving(true);
@@ -74,13 +75,14 @@ export default function ProfilePage() {
       <h1>Update Profile</h1>
       <p>Email: {user?.email} (cannot be changed)</p>
 
-      {error && <p style={{ color: "red" }}>❌ {error}</p>}
-      {success && <p style={{ color: "green" }}>✅ {success}</p>}
+      {error && <p role="alert">❌ {error}</p>}
+      {success && <p role="status">✅ {success}</p>}
 
       <div>
-        <label>Full Name *</label>
+        <label htmlFor="fullName">Full Name *</label>
         <br />
         <input
+          id="fullName"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -91,9 +93,10 @@ export default function ProfilePage() {
       <br />
 
       <div>
-        <label>Room Number</label>
+        <label htmlFor="roomNumber">Room Number</label>
         <br />
         <input
+          id="roomNumber"
           type="text"
           value={room}
           onChange={(e) => setRoom(e.target.value)}
@@ -104,9 +107,10 @@ export default function ProfilePage() {
       <br />
 
       <div>
-        <label>Phone Number</label>
+        <label htmlFor="phoneNumber">Phone Number</label>
         <br />
         <input
+          id="phoneNumber"
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}

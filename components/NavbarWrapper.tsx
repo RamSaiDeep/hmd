@@ -1,15 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 
 export default function NavbarWrapper() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     // Get current user on mount
@@ -31,7 +32,7 @@ export default function NavbarWrapper() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase.auth]);
 
   async function handleLogout() {
     console.log("Logging out:", user?.email);
@@ -44,53 +45,37 @@ export default function NavbarWrapper() {
   const userRole = user?.user_metadata?.role ?? "user";
 
   return (
-    <nav style={{ borderBottom: "1px solid #ccc", padding: "12px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <nav>
       {/* Logo */}
       <Link href="/">
         <strong>HMD</strong>
       </Link>
 
       {/* Right side */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div>
         <Link href="/">Home</Link>
 
         {loading ? (
           <span>...</span>
         ) : user ? (
           // Logged in state
-          <div style={{ position: "relative" }}>
+          <div>
             {/* User button - click to open dropdown */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              style={{ cursor: "pointer" }}
             >
               👤 {userName} ▾
             </button>
 
             {/* Dropdown menu */}
             {menuOpen && (
-              <div
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: "100%",
-                  background: "#1a2332",
-                  border: "1px solid #333",
-                  borderRadius: "8px",
-                  padding: "8px",
-                  minWidth: "180px",
-                  zIndex: 100,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px",
-                }}
-              >
+              <div>
                 {/* Show role */}
-                <span style={{ fontSize: "12px", color: "#888", padding: "4px 8px" }}>
+                <span>
                   {userRole === "admin" ? "🔴 Admin" : userRole === "member" ? "🔵 Member" : "⚪ User"}
                 </span>
 
-                <hr style={{ border: "none", borderTop: "1px solid #333", margin: "4px 0" }} />
+                <hr />
 
                 {/* Dashboard link based on role */}
                 {userRole === "admin" ? (
@@ -116,11 +101,10 @@ export default function NavbarWrapper() {
                   Update Profile
                 </Link>
 
-                <hr style={{ border: "none", borderTop: "1px solid #333", margin: "4px 0" }} />
+                <hr />
 
                 <button
                   onClick={handleLogout}
-                  style={{ cursor: "pointer", color: "red", textAlign: "left", background: "none", border: "none", padding: "4px 8px" }}
                 >
                   Logout
                 </button>

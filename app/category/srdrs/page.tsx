@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 
 // Recording purposes
 const recordingPurposes = [
@@ -155,7 +154,7 @@ export default function SRDRSPage() {
       )}
 
       {/* Weekly Calendar */}
-      <div style={{ overflowX: "auto" }}>
+      <div>
         <table border={1} width="100%">
           <thead>
             <tr>
@@ -182,17 +181,7 @@ export default function SRDRSPage() {
                     <td
                       key={day}
                       onClick={() => !booked && selectSlot(day, slot)}
-                      style={{
-                        cursor: booked ? "not-allowed" : "pointer",
-                        backgroundColor: isSelected
-                          ? "blue"
-                          : booked
-                          ? "red"
-                          : "green",
-                        color: "white",
-                        textAlign: "center",
-                        padding: "8px",
-                      }}
+                      aria-label={`${day} ${slot} ${booked ? "booked" : "free"}`}
                     >
                       {isSelected ? "Selected" : booked ? "Booked" : "Free"}
                     </td>
@@ -230,6 +219,7 @@ export default function SRDRSPage() {
             <select
               value={recordingPurpose}
               onChange={(e) => setRecordingPurpose(e.target.value)}
+              aria-label="Recording purpose"
             >
               <option value="">Select purpose</option>
               {recordingPurposes.map((p) => (
@@ -248,7 +238,6 @@ export default function SRDRSPage() {
               value={recordingDescription}
               onChange={(e) => setRecordingDescription(e.target.value)}
               placeholder="e.g. Original Telugu song for college fest, Podcast episode about hostel life..."
-              style={{ width: "100%" }}
             />
           </div>
 
