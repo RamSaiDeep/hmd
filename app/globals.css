@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+
+  /* Primary Brand Colors */
+  --color-primary: #0f766e; /* Deep teal */
+  --color-primary-light: #14b8a6; /* Bright teal */
+  --color-primary-lighter: #5eead4; /* Light teal */
+  --color-primary-dark: #0d5c57; /* Very dark teal */
+
+  /* Neutrals */
+  --color-bg: #0f172a; /* Dark slate background */
+  --color-bg-secondary: #1a2332; /* Slightly lighter slate */
+  --color-bg-tertiary: #253448; /* Medium-light slate */
+  --color-text: #f1f5f9; /* Light text */
+  --color-text-secondary: #cbd5e1; /* Medium-light text */
+  --color-text-tertiary: #94a3b8; /* Dimmer text */
+  --color-border: #334155; /* Border color */
+
+  /* Accent Colors */
+  --color-accent-cyan: #06b6d4; /* Cyan accent */
+  --color-accent-emerald: #10b981; /* Emerald accent */
+  --color-accent-amber: #f59e0b; /* Amber for warnings */
+  --color-accent-red: #ef4444; /* Red for errors */
+
+  /* Semantic Colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #06b6d4;
+}
+
+html {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Global Styles */
+a {
+  color: var(--color-primary-light);
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary-lighter);
+}
+
+button {
+  transition: all 0.2s ease;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-lighter);
+}
