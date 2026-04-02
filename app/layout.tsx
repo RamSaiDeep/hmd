@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,10 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "HMD - Hostel Maintenance Department",
   description: "Professional technical support for all hostel events and maintenance needs. Sound, light, and expert craftsmanship at your service.",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
