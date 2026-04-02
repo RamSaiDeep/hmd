@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model - stores all users (regular, member, admin)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?   // hashed password for email/password login
+  phone         String?
+  room          String?
+  role          String    @default("user") // "user", "member", "admin"
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  complaints    Complaint[]
+  bookings      StudioBooking[]
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Complaint model
+model Complaint {
+  id          String   @id @default(cuid())
+  userId      String
+  place       String
+  issueType   String   // Fan, Light, Switch, Cupboard, Lock, Electrical, Other
+  issueDetail String?  // only filled when issueType is Other
+  description String?
+  photoUrl    String?
+  status      String   @default("Not Started") // Not Started, In Progress, Finished, Invalid Request
+  priority    String   @default("Medium")      // Low, Medium, High
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Event request model
+model EventRequest {
+  id             String   @id @default(cuid())
+  eventName      String
+  organizerName  String
+  eventDate      String
+  eventTime      String?
+  departments    String[] // Dhwani, Prakash, Kriti
+  dhwaniItems    Json?    // array of {item, quantity}
+  prakashVenue   String?
+  prakashLighting String[]
+  kritiNeeds     String?
+  notes          String?
+  status         String   @default("Pending") // Pending, Responded
+  memberResponse String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Music program request
+model MusicRequest {
+  id          String   @id @default(cuid())
+  eventName   String
+  organizer   String
+  eventDate   String
+  eventTime   String?
+  venue       String
+  soundItems  Json     // array of {item, quantity}
+  needsLight  Boolean  @default(false)
+  lighting    String[]
+  notes       String?
+  status      String   @default("Pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// SRDRS studio booking
+model StudioBooking {
+  id          String   @id @default(cuid())
+  userId      String
+  day         String
+  slot        String
+  purpose     String
+  description String
+  status      String   @default("Pending") // Pending, Confirmed, Cancelled
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
