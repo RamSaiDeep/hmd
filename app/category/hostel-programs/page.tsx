@@ -119,10 +119,6 @@ export default function HostelPrograms() {
 
   return (
     <div>
-      <nav>
-        <Link href="/">HMD</Link>
-        <Link href="/">← Home</Link>
-      </nav>
 
       <h1>Hostel Programs</h1>
       <p>Request support for your hostel program or festival.</p>

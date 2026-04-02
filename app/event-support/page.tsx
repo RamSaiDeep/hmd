@@ -67,13 +67,6 @@ export default function EventSupport() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#0a0f1a" }}>
-      <nav className="flex items-center justify-between px-8 py-4 border-b border-white/10">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="bg-blue-600 rounded-lg w-8 h-8 flex items-center justify-center font-bold text-sm text-white">H</div>
-          <span className="font-semibold text-lg text-white">MD</span>
-        </Link>
-        <Link href="/" className="text-gray-300 hover:text-white text-sm transition">← Home</Link>
-      </nav>
 
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="rounded-2xl p-8 border border-white/10" style={{ backgroundColor: "#111827" }}>

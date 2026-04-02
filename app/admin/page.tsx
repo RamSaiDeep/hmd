@@ -117,11 +117,6 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <nav>
-        <Link href="/">HMD</Link>
-        <span>Admin</span>
-        <Link href="/">← Home</Link>
-      </nav>
 
       <h1>Admin Dashboard</h1>
 

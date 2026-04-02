@@ -25,12 +25,6 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <nav>
-        <Link href="/">HMD</Link>
-        <span>{user.email}</span>
-        <Link href="/">← Home</Link>
-      </nav>
-
       <h1>My Dashboard</h1>
       <p>Welcome back, {userName}</p>
       {userRoom && <p>Room: {userRoom}</p>}

@@ -110,10 +110,6 @@ function LoginContent() {
 
   return (
     <div>
-      <nav>
-        <Link href="/">HMD</Link>
-        <Link href="/">← Home</Link>
-      </nav>
 
       <h1>{mode === "login" ? "Login" : "Sign Up"}</h1>
 

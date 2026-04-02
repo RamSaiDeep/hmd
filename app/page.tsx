@@ -1,5 +1,5 @@
 // This is your main page - it imports all the sections and stacks them together
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/NavbarWrapper";
 import Hero from "@/components/Hero";
 import CategoryCards from "@/components/CategoryCards";
 import TeamSection from "@/components/TeamSection";

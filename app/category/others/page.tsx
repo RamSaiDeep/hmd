@@ -3,10 +3,6 @@ import Link from "next/link";
 export default function OthersPage() {
   return (
     <div>
-      <nav>
-        <Link href="/">HMD</Link>
-        <Link href="/">← Home</Link>
-      </nav>
 
       <h1>Others</h1>
       <p>Other support options available from HMD.</p>

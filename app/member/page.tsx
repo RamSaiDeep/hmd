@@ -80,11 +80,6 @@ export default function MemberDashboard() {
 
   return (
     <div>
-      <nav>
-        <Link href="/">HMD</Link>
-        <span>Member — {loggedInUser}</span>
-        <Link href="/">← Home</Link>
-      </nav>
 
       <h1>Member Dashboard</h1>
 

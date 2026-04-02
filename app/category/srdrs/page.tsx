@@ -135,10 +135,6 @@ export default function SRDRSPage() {
 
   return (
     <div>
-      <nav>
-        <Link href="/">HMD</Link>
-        <Link href="/">← Home</Link>
-      </nav>
 
       <h1>SRDRS — Recording Studio</h1>
       <p>
