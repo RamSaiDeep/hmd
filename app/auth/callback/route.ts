@@ -13,7 +13,14 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      console.log("Auth callback — session created successfully");
+      console.log("Auth callback — session created, syncing user to database");
+
+      // Ensure Prisma User row exists right after email verification/OAuth callback.
+      await fetch(`${origin}/api/user/sync`, {
+        method: "POST",
+        headers: { Cookie: request.headers.get("cookie") ?? "" },
+      });
+
       return NextResponse.redirect(`${origin}${next}`);
     }
 

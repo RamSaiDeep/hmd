@@ -17,35 +17,73 @@ export async function POST() {
       );
     }
 
-    console.log("Syncing user:", user.email);
+    if (!user.email?.trim()) {
+      return NextResponse.json(
+        { error: "User email missing in Supabase profile" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = user.email.trim().toLowerCase();
+    console.log("Syncing user:", normalizedEmail);
 
     const { name, phone, room, role } = user.user_metadata;
 
-    // Check if user already exists in our database
-    const existingUser = await prisma.user.findUnique({
-      where: { email: user.email! },
+    const existingById = await prisma.user.findUnique({
+      where: { id: user.id },
+    });
+    const existingByEmail = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
     });
 
-    if (existingUser) {
-      // Update existing user
+    if (existingById && existingByEmail && existingById.id !== existingByEmail.id) {
       await prisma.user.update({
-        where: { email: user.email! },
+        where: { id: existingByEmail.id },
         data: {
-          name: name ?? existingUser.name,
-          phone: phone ?? existingUser.phone,
-          room: room ?? existingUser.room,
+          name: name ?? existingByEmail.name,
+          phone: phone ?? existingByEmail.phone,
+          room: room ?? existingByEmail.room,
+          role: role ?? existingByEmail.role,
           emailVerified: user.email_confirmed_at
             ? new Date(user.email_confirmed_at)
-            : null,
+            : existingByEmail.emailVerified,
         },
       });
-      console.log("User updated in database:", user.email);
+      console.log("User synced using email-linked record:", normalizedEmail);
+    } else if (existingById) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: normalizedEmail,
+          name: name ?? existingById.name,
+          phone: phone ?? existingById.phone,
+          room: room ?? existingById.room,
+          role: role ?? existingById.role,
+          emailVerified: user.email_confirmed_at
+            ? new Date(user.email_confirmed_at)
+            : existingById.emailVerified,
+        },
+      });
+      console.log("User updated by id in database:", normalizedEmail);
+    } else if (existingByEmail) {
+      await prisma.user.update({
+        where: { email: normalizedEmail },
+        data: {
+          name: name ?? existingByEmail.name,
+          phone: phone ?? existingByEmail.phone,
+          room: room ?? existingByEmail.room,
+          role: role ?? existingByEmail.role,
+          emailVerified: user.email_confirmed_at
+            ? new Date(user.email_confirmed_at)
+            : existingByEmail.emailVerified,
+        },
+      });
+      console.log("User updated by email in database:", normalizedEmail);
     } else {
-      // Create new user in our database
       await prisma.user.create({
         data: {
           id: user.id,
-          email: user.email!,
+          email: normalizedEmail,
           name: name ?? null,
           phone: phone ?? null,
           room: room ?? null,
@@ -55,7 +93,7 @@ export async function POST() {
             : null,
         },
       });
-      console.log("User created in database:", user.email);
+      console.log("User created in database:", normalizedEmail);
     }
 
     return NextResponse.json({ message: "User synced successfully" });
