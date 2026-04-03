@@ -36,8 +36,16 @@ export async function GET() {
   }
 
   try {
+    const normalizedEmail = user.email?.trim().toLowerCase();
+    const dbUser =
+      (await prisma.user.findUnique({ where: { id: user.id } })) ||
+      (normalizedEmail
+        ? await prisma.user.findUnique({ where: { email: normalizedEmail } })
+        : null);
+
+    const userIds = dbUser ? [dbUser.id] : [user.id];
     const complaints = await prisma.complaint.findMany({
-      where: { userId: user.id },
+      where: { userId: { in: userIds } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -131,33 +139,64 @@ export async function POST(req: Request) {
   }
 
   const normalizedEmail = user.email.trim().toLowerCase();
+  let complaintUserId = user.id;
 
   try {
-    await prisma.user.upsert({
-      where: { email: normalizedEmail },
-      update: {
-        id: user.id,
-        email: normalizedEmail,
-        name: user.user_metadata?.name ?? undefined,
-        phone: user.user_metadata?.phone ?? undefined,
-        room: user.user_metadata?.room ?? undefined,
-        role: user.user_metadata?.role ?? undefined,
-        emailVerified: user.email_confirmed_at
-          ? new Date(user.email_confirmed_at)
-          : undefined,
-      },
-      create: {
-        id: user.id,
-        email: normalizedEmail,
-        name: user.user_metadata?.name ?? null,
-        phone: user.user_metadata?.phone ?? null,
-        room: user.user_metadata?.room ?? null,
-        role: user.user_metadata?.role ?? "user",
-        emailVerified: user.email_confirmed_at
-          ? new Date(user.email_confirmed_at)
-          : null,
-      },
+    const existingById = await prisma.user.findUnique({
+      where: { id: user.id },
     });
+
+    if (existingById) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: normalizedEmail,
+          name: user.user_metadata?.name ?? undefined,
+          phone: user.user_metadata?.phone ?? undefined,
+          room: user.user_metadata?.room ?? undefined,
+          role: user.user_metadata?.role ?? undefined,
+          emailVerified: user.email_confirmed_at
+            ? new Date(user.email_confirmed_at)
+            : undefined,
+        },
+      });
+      complaintUserId = existingById.id;
+    } else {
+      const existingByEmail = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+
+      if (existingByEmail) {
+        await prisma.user.update({
+          where: { email: normalizedEmail },
+          data: {
+            name: user.user_metadata?.name ?? undefined,
+            phone: user.user_metadata?.phone ?? undefined,
+            room: user.user_metadata?.room ?? undefined,
+            role: user.user_metadata?.role ?? undefined,
+            emailVerified: user.email_confirmed_at
+              ? new Date(user.email_confirmed_at)
+              : undefined,
+          },
+        });
+        complaintUserId = existingByEmail.id;
+      } else {
+        const createdUser = await prisma.user.create({
+          data: {
+            id: user.id,
+            email: normalizedEmail,
+            name: user.user_metadata?.name ?? null,
+            phone: user.user_metadata?.phone ?? null,
+            room: user.user_metadata?.room ?? null,
+            role: user.user_metadata?.role ?? "user",
+            emailVerified: user.email_confirmed_at
+              ? new Date(user.email_confirmed_at)
+              : null,
+          },
+        });
+        complaintUserId = createdUser.id;
+      }
+    }
   } catch (upsertError) {
     return errorResponse(
       500,
@@ -170,7 +209,7 @@ export async function POST(req: Request) {
   try {
     const complaint = await prisma.complaint.create({
       data: {
-        userId: user.id,
+        userId: complaintUserId,
         place: body.place.trim(),
         issueType: body.issueType.trim(),
         issueDetail: body.issueDetail?.trim() || null,
