@@ -49,8 +49,65 @@ export default function EventSupport() {
     );
   }
 
-  function handleSubmit() {
-    setSubmitted(true);
+  async function handleSubmit() {
+    // Get form values
+    const form = document.querySelector('form') as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    const eventName = (document.getElementById('eventName') as HTMLInputElement)?.value || '';
+    const organizerName = (document.getElementById('organizerName') as HTMLInputElement)?.value || '';
+    const eventDate = (document.getElementById('eventDate') as HTMLInputElement)?.value || '';
+    const eventTime = (document.getElementById('eventTime') as HTMLInputElement)?.value || '';
+    const additionalNotes = (document.getElementById('additionalNotes') as HTMLTextAreaElement)?.value || '';
+    
+    // Validate required fields
+    if (!eventName.trim() || !organizerName.trim() || !eventDate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    // Build departments array
+    const departments: string[] = [];
+    if (dhwani) departments.push('Dhwani');
+    if (prakash) departments.push('Prakash');
+    if (kriti) departments.push('Kriti');
+
+    // Build request data
+    const requestData = {
+      eventName,
+      organizerName,
+      eventDate,
+      eventTime,
+      venue,
+      departments,
+      dhwaniItems: dhwani ? dhwaniRows.filter(row => row.item.trim() && row.quantity.trim()) : undefined,
+      prakashVenue: prakash ? venue : undefined,
+      prakashLighting: prakash ? lighting : [],
+      kritiNeeds: kriti ? kritiNeeds : undefined,
+      notes: additionalNotes,
+    };
+
+    try {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to submit request');
+      }
+
+      const result = await response.json();
+      console.log('Event request submitted successfully:', result);
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to submit request');
+    }
   }
 
   function handleReset() {

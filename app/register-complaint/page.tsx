@@ -1,14 +1,22 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const issueTypes = ["Electrical", "Fan", "Light", "Switch", "Cupboard", "Lock", "Other"];
 
 export default function RegisterComplaint() {
   const [submitted, setSubmitted] = useState(false);
   const [issueType, setIssueType] = useState("");
+  const [issueDetail, setIssueDetail] = useState("");
+  const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // In reality this comes from the logged in user's profile
   // For now we hardcode it - later pulled from session
@@ -22,13 +30,48 @@ export default function RegisterComplaint() {
     }
   }
 
-  function handleSubmit() {
-    setSubmitted(true);
+  async function handleSubmit() {
+    setLoading(true);
+    setError("");
+
+    console.log("Submitting complaint:", { place, issueType, issueDetail, description });
+
+    try {
+      const res = await fetch("/api/complaints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          place,
+          issueType,
+          issueDetail: issueType === "Other" ? issueDetail : "",
+          description,
+        }),
+      });
+
+      console.log("Complaint response status:", res.status);
+
+      const json = await res.json().catch(() => ({}));
+      console.log("Complaint response:", json);
+
+      if (!res.ok) {
+        setError(json?.error ?? "Failed to submit complaint");
+        return;
+      }
+
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Complaint submit error:", error);
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleReset() {
     setSubmitted(false);
     setIssueType("");
+    setIssueDetail("");
+    setDescription("");
     setPhoto(null);
     setPhotoPreview(null);
     setPlace("A-204");
@@ -39,20 +82,28 @@ export default function RegisterComplaint() {
 
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="rounded-2xl p-8 border border-white/10">
-          <h1 className="text-2xl font-bold text-white mb-1">Register a Complaint</h1>
-          <p className="text-gray-300 text-sm mb-8">Fill in the details and our team will get back to you.</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">Register a Complaint</h1>
+              <p className="text-gray-300 text-sm">Fill in the details and our team will get back to you.</p>
+            </div>
+            <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
+              Return Home
+            </Link>
+          </div>
+
+          {error && (
+            <p className="mt-4 text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
 
           {submitted ? (
             <div className="text-center py-12">
               <div className="text-5xl mb-4">✅</div>
               <h2 className="text-xl font-bold text-white mb-2">Complaint Registered!</h2>
               <p className="text-gray-300 text-sm mb-6">Our team will look into it shortly.</p>
-              <button
-                onClick={handleReset}
-                className="bg-blue-600 hover:bg-blue-500 transition px-6 py-3 rounded-xl font-semibold text-white"
-              >
-                Register Another
-              </button>
+              <Button onClick={handleReset}>Register Another</Button>
             </div>
           ) : (
             <div className="flex flex-col gap-5">
@@ -97,6 +148,8 @@ export default function RegisterComplaint() {
                     id="issueDescription"
                     rows={3}
                     placeholder="Describe what the issue is..."
+                    value={issueDetail}
+                    onChange={(e) => setIssueDetail(e.target.value)}
                     className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition resize-none"
                   />
                 </div>
@@ -105,13 +158,14 @@ export default function RegisterComplaint() {
               {/* Additional details */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm text-gray-300" htmlFor="additionalDetails">
-                  Additional Details
-                  <span className="text-gray-500 ml-1">(optional)</span>
+                  Additional Details <span className="text-gray-500 ml-1">(optional)</span>
                 </label>
                 <textarea
                   id="additionalDetails"
                   rows={3}
                   placeholder="Any extra information that might help..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition resize-none"
                 />
               </div>
@@ -161,12 +215,12 @@ export default function RegisterComplaint() {
                 )}
               </div>
 
-              <button
+              <Button
                 onClick={handleSubmit}
-                className="bg-blue-600 hover:bg-blue-500 transition py-3 rounded-xl font-semibold text-white mt-2"
+                disabled={loading || !place.trim() || !issueType}
               >
-                Submit Complaint →
-              </button>
+                {loading ? "Submitting..." : "Submit Complaint →"}
+              </Button>
             </div>
           )}
         </div>

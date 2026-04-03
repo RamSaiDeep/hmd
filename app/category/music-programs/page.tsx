@@ -55,8 +55,8 @@ export default function MusicPrograms() {
     );
   }
 
-  function handleSubmit() {
-    // Validation with debug messages
+  async function handleSubmit() {
+    // Validation
     if (!eventName.trim()) {
       setError("Error: Event name is required");
       return;
@@ -74,20 +74,41 @@ export default function MusicPrograms() {
       return;
     }
 
-    setError("");
-    console.log("Music program request submitted:", {
+    // Build request data
+    const requestData = {
       eventName,
       organizerName,
       eventDate,
       eventTime,
       venue,
-      soundRows,
+      soundItems: soundRows.filter((row) => row.item.trim() && row.quantity.trim()),
       needsLight,
       lighting: needsLight ? lighting : [],
       notes,
-    });
+    };
 
-    setSubmitted(true);
+    try {
+      const response = await fetch("/api/music-programs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to submit request");
+      }
+
+      const result = await response.json();
+      console.log("Music program request submitted:", result);
+      setError("");
+      setSubmitted(true);
+    } catch (error) {
+      console.error("Submit error:", error);
+      setError(error instanceof Error ? error.message : "Failed to submit request");
+    }
   }
 
   function handleReset() {
