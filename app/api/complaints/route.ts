@@ -21,7 +21,10 @@ function errorResponse(
 
 export async function GET() {
   const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (error || !user) {
     return errorResponse(
@@ -51,7 +54,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (error || !user) {
     return errorResponse(
@@ -62,12 +68,22 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = (await req.json().catch(() => null)) as null | {
-    place?: string;
-    issueType?: string;
-    issueDetail?: string;
-    description?: string;
-  };
+  if (!user.email?.trim()) {
+    return errorResponse(
+      400,
+      "USER_EMAIL_REQUIRED",
+      "Your account email is missing. Please update your account and try again.",
+    );
+  }
+
+  const body = (await req.json().catch(() => null)) as
+    | null
+    | {
+        place?: string;
+        issueType?: string;
+        issueDetail?: string;
+        description?: string;
+      };
 
   if (!body) {
     return errorResponse(
@@ -114,17 +130,21 @@ export async function POST(req: Request) {
     );
   }
 
-  let complaintUserId = user.id;
+  const normalizedEmail = user.email.trim().toLowerCase();
+
   try {
     await prisma.user.upsert({
-      where: { email: user.email! },
+      where: { email: normalizedEmail },
       update: {
+        id: user.id,
         email: normalizedEmail,
         name: user.user_metadata?.name ?? undefined,
         phone: user.user_metadata?.phone ?? undefined,
         room: user.user_metadata?.room ?? undefined,
         role: user.user_metadata?.role ?? undefined,
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : undefined,
+        emailVerified: user.email_confirmed_at
+          ? new Date(user.email_confirmed_at)
+          : undefined,
       },
       create: {
         id: user.id,
@@ -133,7 +153,9 @@ export async function POST(req: Request) {
         phone: user.user_metadata?.phone ?? null,
         room: user.user_metadata?.room ?? null,
         role: user.user_metadata?.role ?? "user",
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
+        emailVerified: user.email_confirmed_at
+          ? new Date(user.email_confirmed_at)
+          : null,
       },
     });
   } catch (upsertError) {
@@ -148,7 +170,7 @@ export async function POST(req: Request) {
   try {
     const complaint = await prisma.complaint.create({
       data: {
-        userId: complaintUserId,
+        userId: user.id,
         place: body.place.trim(),
         issueType: body.issueType.trim(),
         issueDetail: body.issueDetail?.trim() || null,
