@@ -22,6 +22,14 @@ function LoginContent() {
   const urlError = searchParams.get("error");
 
   const supabase = createClient();
+  const inputClass =
+    "mt-1 w-full rounded-xl border border-white/25 bg-slate-900/70 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/30";
+  const tabButtonClass =
+    "rounded-lg border border-white/20 px-4 py-2 text-sm text-white transition hover:border-cyan-400/60 hover:bg-slate-800/80";
+  const actionButtonClass =
+    "w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60";
+  const googleButtonClass =
+    "w-full rounded-xl border border-white/20 bg-slate-900/70 px-4 py-3 text-sm text-white transition hover:border-cyan-400/60 hover:bg-slate-800/80";
 
   async function handleLogin() {
     setLoading(true);
@@ -109,40 +117,37 @@ function LoginContent() {
   }
 
   return (
-    <div>
-
-      <h1>{mode === "login" ? "Login" : "Sign Up"}</h1>
+    <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-white/15 bg-slate-950/80 p-6 text-white shadow-xl">
+      <h1 className="mb-4 text-2xl font-bold">{mode === "login" ? "Login" : "Sign Up"}</h1>
 
       {verified && (
-        <p role="status">✅ Email verified! You can now log in.</p>
+        <p role="status" className="mb-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">✅ Email verified! You can now log in.</p>
       )}
       {urlError && (
-        <p role="alert">❌ {urlError}</p>
+        <p role="alert" className="mb-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">❌ {urlError}</p>
       )}
       {error && (
-        <p role="alert">❌ {error}</p>
+        <p role="alert" className="mb-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">❌ {error}</p>
       )}
       {success && (
-        <p role="status">✅ {success}</p>
+        <p role="status" className="mb-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">✅ {success}</p>
       )}
 
-      <div>
-        <button onClick={() => { setMode("login"); setError(""); setSuccess(""); }}>
+      <div className="mb-5 flex gap-2">
+        <button className={tabButtonClass} onClick={() => { setMode("login"); setError(""); setSuccess(""); }}>
           Login
         </button>
-        <button onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}>
+        <button className={tabButtonClass} onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}>
           Sign Up
         </button>
       </div>
 
-      <br />
-
       {mode === "signup" && (
         <>
-          <div>
+          <div className="mb-4">
             <label htmlFor="fullName">Full Name *</label>
-            <br />
             <input
+              className={inputClass}
               id="fullName"
               type="text"
               value={name}
@@ -150,11 +155,10 @@ function LoginContent() {
               placeholder="Sumanth Konduri"
             />
           </div>
-          <br />
-          <div>
+          <div className="mb-4">
             <label htmlFor="roomNumber">Room Number</label>
-            <br />
             <input
+              className={inputClass}
               id="roomNumber"
               type="text"
               value={room}
@@ -162,11 +166,10 @@ function LoginContent() {
               placeholder="A-204"
             />
           </div>
-          <br />
-          <div>
+          <div className="mb-4">
             <label htmlFor="phoneNumber">Phone Number</label>
-            <br />
             <input
+              className={inputClass}
               id="phoneNumber"
               type="tel"
               value={phone}
@@ -174,14 +177,13 @@ function LoginContent() {
               placeholder="+91 98765 43210"
             />
           </div>
-          <br />
         </>
       )}
 
-      <div>
+      <div className="mb-4">
         <label htmlFor="email">Email *</label>
-        <br />
         <input
+          className={inputClass}
           id="email"
           type="email"
           value={email}
@@ -189,12 +191,11 @@ function LoginContent() {
           placeholder="you@example.com"
         />
       </div>
-      <br />
 
-      <div>
+      <div className="mb-4">
         <label htmlFor="password">Password *</label>
-        <br />
         <input
+          className={inputClass}
           id="password"
           type="password"
           value={password}
@@ -202,46 +203,42 @@ function LoginContent() {
           placeholder="minimum 8 characters"
         />
       </div>
-      <br />
 
       {mode === "signup" && (
-        <>
-          <div>
-            <label htmlFor="confirmPassword">Confirm Password *</label>
-            <br />
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="repeat password"
-            />
-          </div>
-          <br />
-        </>
+        <div className="mb-4">
+          <label htmlFor="confirmPassword">Confirm Password *</label>
+          <input
+            className={inputClass}
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="repeat password"
+          />
+        </div>
       )}
 
       <button
+        className={actionButtonClass}
         onClick={mode === "login" ? handleLogin : handleSignup}
         disabled={loading}
       >
         {loading
           ? "Please wait..."
           : mode === "login"
-          ? "Login →"
-          : "Create Account →"}
+            ? "Login →"
+            : "Create Account →"}
       </button>
 
-      <br /><br />
+      <p className="my-4 text-center text-sm text-slate-300">or</p>
 
-      <p>or</p>
-
-      <button onClick={handleGoogle}>
+      <button className={googleButtonClass} onClick={handleGoogle}>
         Continue with Google
       </button>
 
-      <br /><br />
-      <Link href="/">← Back to Home</Link>
+      <div className="mt-4 text-sm">
+        <Link className="text-cyan-300 hover:text-cyan-200" href="/">← Back to Home</Link>
+      </div>
     </div>
   );
 }

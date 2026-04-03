@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const issueTypes = ["Electrical", "Fan", "Light", "Switch", "Cupboard", "Lock", "Other"];
 
@@ -32,10 +33,24 @@ export default function RegisterComplaint() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [defaultRoom, setDefaultRoom] = useState("");
 
-  // In reality this comes from the logged in user's profile
-  // For now we hardcode it - later pulled from session
-  const [place, setPlace] = useState("A-204");
+  const [place, setPlace] = useState("");
+
+  useEffect(() => {
+    async function prefillRoomFromUser() {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      const room = data.user?.user_metadata?.room;
+      if (typeof room === "string" && room.trim()) {
+        const normalizedRoom = room.trim();
+        setDefaultRoom(normalizedRoom);
+        setPlace(normalizedRoom);
+      }
+    }
+
+    prefillRoomFromUser();
+  }, []);
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -101,7 +116,7 @@ export default function RegisterComplaint() {
     setDescription("");
     setPhoto(null);
     setPhotoPreview(null);
-    setPlace("A-204");
+    setPlace(defaultRoom);
   }
 
   return (
