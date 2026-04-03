@@ -215,11 +215,18 @@ export async function POST(req: Request) {
       complaintUserId = createdUser.id;
     }
   } catch (upsertError) {
+    const syncErrorDetails =
+      upsertError instanceof Error
+        ? upsertError.message
+        : typeof upsertError === "string"
+          ? upsertError
+          : JSON.stringify(upsertError);
+
     return errorResponse(
       500,
       "USER_SYNC_FAILED",
       "Failed to sync user record before complaint submission.",
-      upsertError instanceof Error ? upsertError.message : "Unknown sync error",
+      syncErrorDetails,
     );
   }
 

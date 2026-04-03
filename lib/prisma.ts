@@ -1,10 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig } from "@neondatabase/serverless";
-import ws from "ws";
-
-// Required for Neon serverless
-neonConfig.webSocketConstructor = ws;
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
@@ -20,9 +14,9 @@ function createPrismaClient() {
   const cleanConnectionString = connectionString.trim().replace(/\s+/g, ' ');
   console.log("Prisma - Cleaned connection string length:", cleanConnectionString.length);
 
-  // PrismaNeon expects a neon PoolConfig (e.g. { connectionString }), not a Pool instance.
-  const adapter = new PrismaNeon({ connectionString: cleanConnectionString });
-  return new PrismaClient({ adapter });
+  // PrismaClient reads DATABASE_URL from process.env.
+  process.env.DATABASE_URL = cleanConnectionString;
+  return new PrismaClient();
 }
 
 const globalForPrisma = globalThis as unknown as {
