@@ -114,19 +114,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const normalizedEmail = user.email?.trim().toLowerCase();
-  if (!normalizedEmail) {
-    return errorResponse(
-      400,
-      "AUTH_EMAIL_MISSING",
-      "Your account does not have an email address. Please update your profile and try again.",
-    );
-  }
-
   let complaintUserId = user.id;
   try {
-    const syncedById = await prisma.user.upsert({
-      where: { id: user.id },
+    await prisma.user.upsert({
+      where: { email: user.email! },
       update: {
         email: normalizedEmail,
         name: user.user_metadata?.name ?? undefined,
@@ -145,57 +136,13 @@ export async function POST(req: Request) {
         emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
       },
     });
-
-    complaintUserId = syncedById.id;
   } catch (upsertError) {
-    // Fallback: if email already exists under a different Prisma user id,
-    // reuse that user row to keep complaint creation working.
-    if (
-      upsertError instanceof Prisma.PrismaClientKnownRequestError
-      && upsertError.code === "P2002"
-    ) {
-      try {
-        const existingByEmail = await prisma.user.findUnique({
-          where: { email: normalizedEmail },
-        });
-
-        if (!existingByEmail) {
-          return errorResponse(
-            500,
-            "USER_SYNC_FAILED",
-            "User sync failed due to a conflicting email record.",
-            upsertError.message,
-          );
-        }
-
-        const updatedExisting = await prisma.user.update({
-          where: { id: existingByEmail.id },
-          data: {
-            name: user.user_metadata?.name ?? undefined,
-            phone: user.user_metadata?.phone ?? undefined,
-            room: user.user_metadata?.room ?? undefined,
-            role: user.user_metadata?.role ?? undefined,
-            emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : undefined,
-          },
-        });
-
-        complaintUserId = updatedExisting.id;
-      } catch (fallbackError) {
-        return errorResponse(
-          500,
-          "USER_SYNC_FAILED",
-          "Failed to recover from user email conflict during sync.",
-          fallbackError instanceof Error ? fallbackError.message : upsertError.message,
-        );
-      }
-    } else {
-      return errorResponse(
-        500,
-        "USER_SYNC_FAILED",
-        "Failed to sync user record before complaint submission.",
-        upsertError instanceof Error ? upsertError.message : "Unknown sync error",
-      );
-    }
+    return errorResponse(
+      500,
+      "USER_SYNC_FAILED",
+      "Failed to sync user record before complaint submission.",
+      upsertError instanceof Error ? upsertError.message : "Unknown sync error",
+    );
   }
 
   try {
