@@ -1,68 +1,120 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+
+function errorResponse(
+  status: number,
+  code: string,
+  message: string,
+  details?: string,
+) {
+  return NextResponse.json(
+    {
+      error: message,
+      code,
+      details,
+    },
+    { status },
+  );
+}
 
 export async function GET() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    return errorResponse(
+      401,
+      "AUTH_REQUIRED",
+      "You must be logged in to view complaints.",
+      error?.message,
+    );
   }
 
-  const complaints = await prisma.complaint.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    const complaints = await prisma.complaint.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+    });
 
-  return NextResponse.json({ complaints });
+    return NextResponse.json({ complaints });
+  } catch (dbError) {
+    return errorResponse(
+      500,
+      "COMPLAINTS_FETCH_FAILED",
+      "Unable to load complaints right now. Please try again in a moment.",
+      dbError instanceof Error ? dbError.message : "Unknown database error",
+    );
+  }
 }
 
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  console.log("Complaint API - User check:", { user: user?.email, error: error?.message });
-
   if (error || !user) {
-    console.log("Complaint API - Authentication failed");
-    return NextResponse.json({ error: "Not logged in" }, { status: 401 });
+    return errorResponse(
+      401,
+      "AUTH_REQUIRED",
+      "Please log in before submitting a complaint.",
+      error?.message,
+    );
   }
 
-  const body = await req.json().catch(() => null) as null | {
+  const body = (await req.json().catch(() => null)) as null | {
     place?: string;
     issueType?: string;
     issueDetail?: string;
     description?: string;
   };
 
-  console.log("Complaint API - Request body:", body);
-
-  if (!body?.place?.trim() || !body?.issueType?.trim()) {
-    console.log("Complaint API - Missing required fields");
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  if (!body) {
+    return errorResponse(
+      400,
+      "INVALID_JSON_BODY",
+      "Request body is not valid JSON.",
+    );
   }
 
-  // Test database connection first
+  if (!body.place?.trim()) {
+    return errorResponse(
+      400,
+      "PLACE_REQUIRED",
+      "Room/Place is required to submit a complaint.",
+    );
+  }
+
+  if (!body.issueType?.trim()) {
+    return errorResponse(
+      400,
+      "ISSUE_TYPE_REQUIRED",
+      "Issue type is required to submit a complaint.",
+    );
+  }
+
+  if (body.issueType.trim() === "Other" && !body.issueDetail?.trim()) {
+    return errorResponse(
+      400,
+      "ISSUE_DETAIL_REQUIRED",
+      "Please describe the issue when issue type is 'Other'.",
+    );
+  }
+
   try {
-    console.log("Complaint API - Testing database connection...");
     await prisma.$connect();
-    console.log("Complaint API - Database connection successful");
-    
-    // Test a simple query
-    const testUser = await prisma.user.findFirst();
-    console.log("Complaint API - Database query test, found user:", testUser?.email || "No users found");
   } catch (connectError) {
-    console.error("Complaint API - Database connection failed:", connectError);
-    return NextResponse.json({ 
-      error: "Database connection failed: " + (connectError instanceof Error ? connectError.message : "Unknown connection error") 
-    }, { status: 500 });
+    return errorResponse(
+      500,
+      "DB_CONNECTION_FAILED",
+      "Database connection failed while submitting complaint.",
+      connectError instanceof Error
+        ? connectError.message
+        : "Unknown connection error",
+    );
   }
 
   try {
-    // Ensure user exists in Prisma DB (sync route normally does this, but keep API robust)
-    console.log("Complaint API - Attempting user sync for:", user.email);
-    
     await prisma.user.upsert({
       where: { email: user.email! },
       update: {
@@ -82,17 +134,16 @@ export async function POST(req: Request) {
         emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
       },
     });
+  } catch (upsertError) {
+    return errorResponse(
+      500,
+      "USER_SYNC_FAILED",
+      "Failed to sync user record before complaint submission.",
+      upsertError instanceof Error ? upsertError.message : "Unknown sync error",
+    );
+  }
 
-    console.log("Complaint API - User synced successfully");
-
-    console.log("Complaint API - Attempting to create complaint with data:", {
-      userId: user.id,
-      place: body.place.trim(),
-      issueType: body.issueType.trim(),
-      issueDetail: body.issueDetail?.trim() || null,
-      description: body.description?.trim() || null,
-    });
-
+  try {
     const complaint = await prisma.complaint.create({
       data: {
         userId: user.id,
@@ -102,29 +153,33 @@ export async function POST(req: Request) {
         description: body.description?.trim() || null,
       },
     });
-
-    console.log("Complaint API - Complaint created successfully:", complaint.id);
     return NextResponse.json({ complaint }, { status: 201 });
   } catch (dbError) {
-    console.error("Complaint API - Raw database error:", dbError);
-    console.error("Complaint API - Error type:", typeof dbError);
-    console.error("Complaint API - Error constructor:", dbError?.constructor?.name);
-    
-    let errorMessage = "Unknown database error";
-    if (dbError instanceof Error) {
-      errorMessage = dbError.message;
-    } else if (typeof dbError === 'string') {
-      errorMessage = dbError;
-    } else if (dbError && typeof dbError === 'object') {
-      errorMessage = JSON.stringify(dbError);
+    if (dbError instanceof Prisma.PrismaClientKnownRequestError) {
+      if (dbError.code === "P2003") {
+        return errorResponse(
+          500,
+          "USER_REFERENCE_INVALID",
+          "Your user record is not linked correctly. Please log out and log back in, then try again.",
+          dbError.message,
+        );
+      }
+
+      if (dbError.code === "P2002") {
+        return errorResponse(
+          409,
+          "DUPLICATE_COMPLAINT",
+          "A complaint with this data already exists.",
+          dbError.message,
+        );
+      }
     }
-    
-    console.error("Complaint API - Final error message:", errorMessage);
-    
-    return NextResponse.json({ 
-      error: "Database error: " + errorMessage,
-      rawError: dbError
-    }, { status: 500 });
+
+    return errorResponse(
+      500,
+      "COMPLAINT_CREATE_FAILED",
+      "Complaint could not be saved due to a server error.",
+      dbError instanceof Error ? dbError.message : "Unknown database error",
+    );
   }
 }
-
