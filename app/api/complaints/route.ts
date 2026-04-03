@@ -114,10 +114,12 @@ export async function POST(req: Request) {
     );
   }
 
+  let complaintUserId = user.id;
   try {
     await prisma.user.upsert({
       where: { email: user.email! },
       update: {
+        email: normalizedEmail,
         name: user.user_metadata?.name ?? undefined,
         phone: user.user_metadata?.phone ?? undefined,
         room: user.user_metadata?.room ?? undefined,
@@ -126,7 +128,7 @@ export async function POST(req: Request) {
       },
       create: {
         id: user.id,
-        email: user.email!,
+        email: normalizedEmail,
         name: user.user_metadata?.name ?? null,
         phone: user.user_metadata?.phone ?? null,
         room: user.user_metadata?.room ?? null,
@@ -146,7 +148,7 @@ export async function POST(req: Request) {
   try {
     const complaint = await prisma.complaint.create({
       data: {
-        userId: user.id,
+        userId: complaintUserId,
         place: body.place.trim(),
         issueType: body.issueType.trim(),
         issueDetail: body.issueDetail?.trim() || null,
