@@ -1,7 +1,5 @@
 const categories = [
   { label: "Music Programs", icon: "🎵", href: "/category/music-programs" },
-  { label: "Hostel Programs", icon: "🏠", href: "/category/hostel-programs" },
-  { label: "SRDRS Programs", icon: "📋", href: "/category/srdrs" },
   { label: "Others", icon: "⚙️", href: "/category/others" },
 ];
 
@@ -14,7 +12,7 @@ export default function CategoryCards() {
           <p className="text-[var(--color-text-secondary)]">Browse and request services across different categories</p>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
           {categories.map((cat) => (
             <a
               key={cat.label}
