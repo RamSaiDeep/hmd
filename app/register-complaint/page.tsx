@@ -8,6 +8,21 @@ import { cn } from "@/lib/utils";
 
 const issueTypes = ["Electrical", "Fan", "Light", "Switch", "Cupboard", "Lock", "Other"];
 
+type ComplaintApiError = {
+  error?: string;
+  code?: string;
+  details?: string;
+};
+
+function getSubmitErrorMessage(status: number, apiError?: ComplaintApiError) {
+  if (apiError?.error) return apiError.error;
+
+  if (status === 401) return "You are not logged in. Please log in and try again.";
+  if (status === 400) return "Invalid complaint data. Please check all required fields.";
+  if (status >= 500) return "Server error while submitting complaint. Please try again.";
+  return "Failed to submit complaint.";
+}
+
 export default function RegisterComplaint() {
   const [submitted, setSubmitted] = useState(false);
   const [issueType, setIssueType] = useState("");
@@ -31,10 +46,23 @@ export default function RegisterComplaint() {
   }
 
   async function handleSubmit() {
+    if (!place.trim()) {
+      setError("Room/Place is required.");
+      return;
+    }
+
+    if (!issueType.trim()) {
+      setError("Issue type is required.");
+      return;
+    }
+
+    if (issueType === "Other" && !issueDetail.trim()) {
+      setError("Please describe the issue when issue type is 'Other'.");
+      return;
+    }
+
     setLoading(true);
     setError("");
-
-    console.log("Submitting complaint:", { place, issueType, issueDetail, description });
 
     try {
       const res = await fetch("/api/complaints", {
@@ -48,20 +76,19 @@ export default function RegisterComplaint() {
         }),
       });
 
-      console.log("Complaint response status:", res.status);
-
-      const json = await res.json().catch(() => ({}));
-      console.log("Complaint response:", json);
+      const json = await res.json().catch(() => ({} as ComplaintApiError));
 
       if (!res.ok) {
-        setError(json?.error ?? "Failed to submit complaint");
+        const apiError = json as ComplaintApiError;
+        const message = getSubmitErrorMessage(res.status, apiError);
+        const errorCode = apiError?.code ? ` [${apiError.code}]` : "";
+        setError(`${message}${errorCode}`);
         return;
       }
 
       setSubmitted(true);
-    } catch (error) {
-      console.error("Complaint submit error:", error);
-      setError("Network error. Please try again.");
+    } catch {
+      setError("Network error while submitting complaint. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
