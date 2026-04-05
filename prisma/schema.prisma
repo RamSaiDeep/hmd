@@ -87,6 +87,7 @@ model Complaint {
   priority    String   @default("Medium")      // Low, Medium, High
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  updatedBy   String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
