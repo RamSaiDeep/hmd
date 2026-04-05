@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 type GlobalForPrisma = typeof globalThis & {
   prisma: PrismaClient | undefined;
@@ -6,21 +7,36 @@ type GlobalForPrisma = typeof globalThis & {
 
 function createPrismaClient(): PrismaClient {
   console.info("[prisma] createPrismaClient called");
-  const accelerateUrl = process.env.PRISMA_ACCELERATE_URL;
 
+  const accelerateUrl = process.env.PRISMA_ACCELERATE_URL;
+  const databaseUrl = process.env.DATABASE_URL;
+
+  // ✅ Option 1: Accelerate (if provided)
   if (accelerateUrl) {
-    console.info("[prisma] Using PRISMA_ACCELERATE_URL for Prisma client initialization");
+    console.info("[prisma] Using PRISMA_ACCELERATE_URL");
     return new PrismaClient({
       accelerateUrl,
       log: ["query", "info", "warn", "error"],
     });
   }
 
-  console.error(
-    "[prisma] Missing Prisma runtime configuration. PRISMA_ACCELERATE_URL is not set and no driver adapter is configured."
-  );
+  // ✅ Option 2: PostgreSQL adapter (YOUR CASE)
+  if (databaseUrl) {
+    console.info("[prisma] Using PostgreSQL adapter");
+
+    const adapter = new PrismaPg({
+      connectionString: databaseUrl,
+    });
+
+    return new PrismaClient({
+      adapter,
+      log: ["query", "info", "warn", "error"],
+    });
+  }
+
+  // ❌ Nothing configured
   throw new Error(
-    'Prisma Client v7 requires either PRISMA_ACCELERATE_URL, or a configured driver adapter. Install @prisma/adapter-pg and initialize PrismaClient with { adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) }.'
+    "No Prisma configuration found. Set either PRISMA_ACCELERATE_URL or DATABASE_URL."
   );
 }
 
@@ -28,10 +44,10 @@ function getPrismaClient(): PrismaClient {
   const globalForPrisma = globalThis as GlobalForPrisma;
 
   if (!globalForPrisma.prisma) {
-    console.info("[prisma] No cached Prisma client found. Initializing new client instance.");
+    console.info("[prisma] Initializing new Prisma client");
     globalForPrisma.prisma = createPrismaClient();
   } else {
-    console.info("[prisma] Reusing cached Prisma client instance.");
+    console.info("[prisma] Reusing Prisma client");
   }
 
   return globalForPrisma.prisma;

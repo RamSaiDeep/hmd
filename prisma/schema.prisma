@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "binary"
 }
 
@@ -7,16 +7,19 @@ datasource db {
   provider = "postgresql"
 }
 
-// User model - stores all users (regular, member, admin)
+//////////////////////////////////////////////////////
+// USER MODEL (controlled by auth → keep id manual)
+//////////////////////////////////////////////////////
+
 model User {
-  id            String    @id 
+  id            String    @id
   name          String?
   email         String    @unique
   emailVerified DateTime?
-  password      String?   // hashed password for email/password login
+  password      String?
   phone         String?
   room          String?
-  role          String    @default("user") // "user", "member", "admin"
+  role          String    @default("user") // user, member, admin
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -28,9 +31,12 @@ model User {
   bookings      StudioBooking[]
 }
 
-// NextAuth required models
+//////////////////////////////////////////////////////
+// NEXTAUTH MODELS (auto IDs)
+//////////////////////////////////////////////////////
+
 model Account {
-  id                String  @id 
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -49,7 +55,7 @@ model Account {
 }
 
 model Session {
-  id           String   @id 
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -65,13 +71,16 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Complaint model
+//////////////////////////////////////////////////////
+// COMPLAINT SYSTEM
+//////////////////////////////////////////////////////
+
 model Complaint {
-  id          String   @id 
+  id          String   @id @default(uuid())
   userId      String
   place       String
-  issueType   String   // Fan, Light, Switch, Cupboard, Lock, Electrical, Other
-  issueDetail String?  // only filled when issueType is Other
+  issueType   String
+  issueDetail String?
   description String?
   photoUrl    String?
   status      String   @default("Not Started") // Not Started, In Progress, Finished, Invalid Request
@@ -80,47 +89,58 @@ model Complaint {
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
-// Event request model
+//////////////////////////////////////////////////////
+// EVENT REQUEST SYSTEM
+//////////////////////////////////////////////////////
+
 model EventRequest {
-  id             String   @id 
-  eventName      String
-  organizerName  String
-  eventDate      String
-  eventTime      String?
-  departments    String[] // Dhwani, Prakash, Kriti
-  dhwaniItems    Json?    // array of {item, quantity}
-  prakashVenue   String?
+  id              String   @id @default(uuid())
+  eventName       String
+  organizerName   String
+  eventDate       String
+  eventTime       String?
+  departments     String[] // Dhwani, Prakash, Kriti
+  dhwaniItems     Json?
+  prakashVenue    String?
   prakashLighting String[]
-  kritiNeeds     String?
-  notes          String?
-  status         String   @default("Pending") // Pending, Responded
-  memberResponse String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  kritiNeeds      String?
+  notes           String?
+  status          String   @default("Pending")
+  memberResponse  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
-// Music program request
+//////////////////////////////////////////////////////
+// MUSIC REQUEST SYSTEM
+//////////////////////////////////////////////////////
+
 model MusicRequest {
-  id          String   @id 
-  eventName   String
-  organizer   String
-  eventDate   String
-  eventTime   String?
-  venue       String
-  soundItems  Json     // array of {item, quantity}
-  needsLight  Boolean  @default(false)
-  lighting    String[]
-  notes       String?
-  status      String   @default("Pending")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  eventName  String
+  organizer  String
+  eventDate  String
+  eventTime  String?
+  venue      String
+  soundItems Json
+  needsLight Boolean  @default(false)
+  lighting   String[]
+  notes      String?
+  status     String   @default("Pending")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
-// SRDRS studio booking
+//////////////////////////////////////////////////////
+// STUDIO BOOKING SYSTEM
+//////////////////////////////////////////////////////
+
 model StudioBooking {
-  id          String   @id 
+  id          String   @id @default(uuid())
   userId      String
   day         String
   slot        String
@@ -131,4 +151,6 @@ model StudioBooking {
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
