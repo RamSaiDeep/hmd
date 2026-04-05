@@ -4,10 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
   try {
+    console.info("[user/sync] Sync request started");
     const supabase = await createClient();
+    console.info("[user/sync] Supabase server client created");
 
     // Get current logged in user
     const { data: { user }, error } = await supabase.auth.getUser();
+    console.info("[user/sync] Supabase auth.getUser completed", {
+      hasUser: Boolean(user),
+      hasError: Boolean(error),
+    });
 
     if (error || !user) {
       console.log("Sync error: No user logged in");
@@ -26,6 +32,10 @@ export async function POST() {
 
     const normalizedEmail = user.email.trim().toLowerCase();
     console.log("Syncing user:", normalizedEmail);
+    console.info("[user/sync] Checking for existing Prisma records", {
+      userId: user.id,
+      email: normalizedEmail,
+    });
 
     const { name, phone, room, role } = user.user_metadata;
 
@@ -35,8 +45,13 @@ export async function POST() {
     const existingByEmail = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
+    console.info("[user/sync] Existing user lookup complete", {
+      foundById: Boolean(existingById),
+      foundByEmail: Boolean(existingByEmail),
+    });
 
     if (existingById && existingByEmail && existingById.id !== existingByEmail.id) {
+      console.info("[user/sync] Entering merge path: existingById and existingByEmail mismatch");
       await prisma.user.update({
         where: { id: existingByEmail.id },
         data: {
@@ -51,6 +66,7 @@ export async function POST() {
       });
       console.log("User synced using email-linked record:", normalizedEmail);
     } else if (existingById) {
+      console.info("[user/sync] Entering update-by-id path");
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -66,6 +82,7 @@ export async function POST() {
       });
       console.log("User updated by id in database:", normalizedEmail);
     } else if (existingByEmail) {
+      console.info("[user/sync] Entering update-by-email path");
       await prisma.user.update({
         where: { email: normalizedEmail },
         data: {
@@ -80,6 +97,7 @@ export async function POST() {
       });
       console.log("User updated by email in database:", normalizedEmail);
     } else {
+      console.info("[user/sync] Entering create-user path");
       await prisma.user.create({
         data: {
           id: user.id,
@@ -95,11 +113,33 @@ export async function POST() {
       });
       console.log("User created in database:", normalizedEmail);
     }
+    console.info("[user/sync] Sync completed successfully", {
+      userId: user.id,
+      email: normalizedEmail,
+    });
 
     return NextResponse.json({ message: "User synced successfully" });
 
   } catch (error) {
     console.error("Sync error:", error);
+
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const isPrismaConfigIssue = message.includes("Prisma Client v7 requires either PRISMA_ACCELERATE_URL");
+    console.error("[user/sync] Sync failed", {
+      message,
+      isPrismaConfigIssue,
+    });
+
+    if (isPrismaConfigIssue) {
+      return NextResponse.json(
+        {
+          error:
+            "Database sync is not configured. Set PRISMA_ACCELERATE_URL, or install and configure @prisma/adapter-pg.",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to sync user" },
       { status: 500 }
