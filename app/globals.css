@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Minimal defaults so v0/Tailwind UIs look right */
-body {
-  background-color: #0a0f1a;
-  color: white;
-}
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -18,19 +13,10 @@ body {
   --font-mono: "Geist Mono", "Geist Mono Fallback";
 
   /* Primary Brand Colors */
-  --color-primary: #0f766e; /* Deep teal */
-  --color-primary-light: #14b8a6; /* Bright teal */
-  --color-primary-lighter: #5eead4; /* Light teal */
-  --color-primary-dark: #0d5c57; /* Very dark teal */
-
-  /* Neutrals */
-  --color-bg: #0f172a; /* Dark slate background */
-  --color-bg-secondary: #1a2332; /* Slightly lighter slate */
-  --color-bg-tertiary: #253448; /* Medium-light slate */
-  --color-text: #f1f5f9; /* Light text */
-  --color-text-secondary: #cbd5e1; /* Medium-light text */
-  --color-text-tertiary: #94a3b8; /* Dimmer text */
-  --color-border: #334155; /* Border color */
+  --color-primary: #0f766e;
+  --color-primary-light: #14b8a6;
+  --color-primary-lighter: #5eead4;
+  --color-primary-dark: #0d5c57;
 
   /* Accent Colors */
   --color-accent-cyan: #06b6d4; /* Cyan accent */
@@ -82,16 +68,6 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-html {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-}
-
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-}
-
 /* Global Styles */
 a {
   color: var(--color-primary-light);
@@ -126,6 +102,13 @@ button {
 }
 
 :root {
+  --color-bg: #f8fafc;
+  --color-bg-secondary: #eef2ff;
+  --color-bg-tertiary: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-tertiary: #64748b;
+  --color-border: #cbd5e1;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -161,6 +144,13 @@ button {
 }
 
 .dark {
+  --color-bg: #0f172a;
+  --color-bg-secondary: #1a2332;
+  --color-bg-tertiary: #253448;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #94a3b8;
+  --color-border: #334155;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

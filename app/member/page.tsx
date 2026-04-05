@@ -3,10 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import MemberDashboard from "./MemberDashboard";
 
-export default async function MemberPage() {
+type MemberView = "all" | "mine" | "events";
+
+export default async function MemberPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string | string[] }>;
+}) {
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) return redirect("/login");
 
@@ -27,11 +35,17 @@ export default async function MemberPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const params = await searchParams;
+  const viewParam = Array.isArray(params.view) ? params.view[0] : params.view;
+  const initialView: MemberView =
+    viewParam === "mine" || viewParam === "events" ? viewParam : "all";
+
   return (
     <MemberDashboard
       complaints={complaints}
       events={events}
       currentUser={dbUser}
+      initialView={initialView}
     />
   );
 }
