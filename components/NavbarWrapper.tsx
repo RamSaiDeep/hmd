@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -10,57 +11,93 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type NavLink = {
+  href: string;
+  label: string;
+};
+
 export default function NavbarWrapper() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // Get current user on mount
     async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log("Navbar — user:", user?.email ?? "not logged in");
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
     }
 
     getUser();
 
-    // Listen for auth changes — login/logout updates navbar automatically
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        console.log("Navbar — auth state changed:", session?.user?.email ?? "logged out");
-        setUser(session?.user ?? null);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      setMenuOpen(false);
+    });
 
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
+
   async function handleLogout() {
-    console.log("Logging out:", user?.email);
     await supabase.auth.signOut();
+    setMenuOpen(false);
     router.push("/");
     router.refresh();
   }
 
   const userName = user?.user_metadata?.name ?? user?.email ?? "";
   const userRole = user?.user_metadata?.role ?? "user";
-  const dashboardHref =
-    userRole === "admin" ? "/admin" : userRole === "member" ? "/member" : "/dashboard";
+
+  const navLinks: NavLink[] =
+    userRole === "admin"
+      ? [
+          { href: "/member?view=all", label: "All Complaints" },
+          { href: "/member?view=mine", label: "My Complaints" },
+          { href: "/admin", label: "Admin" },
+        ]
+      : userRole === "member"
+      ? [
+          { href: "/member?view=all", label: "All Complaints" },
+          { href: "/member?view=mine", label: "My Complaints" },
+        ]
+      : [
+          { href: "/dashboard", label: "My Dashboard" },
+          { href: "/register-complaint", label: "New Complaint" },
+        ];
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <nav className="sticky top-0 z-50 border-b border-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold">
             H
           </div>
           <div className="hidden sm:flex flex-col leading-tight">
-            <span className="font-semibold">HMD</span>
+            <span className="font-semibold text-foreground">HMD</span>
             <span className="text-xs text-muted-foreground">Hostel Maintenance</span>
           </div>
 
@@ -72,92 +109,54 @@ export default function NavbarWrapper() {
           </div>
         </Link>
 
-        {/* Right side */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-foreground")}>
             Home
           </Link>
 
-          {!loading && user && (
-            <Link
-              href={dashboardHref}
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-            >
-              Dashboard
-            </Link>
-          )}
+          {!loading &&
+            user &&
+            navLinks.map((item) => (
+              <Link
+                key={item.href + item.label}
+                href={item.href}
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden md:inline-flex text-foreground")}
+              >
+                {item.label}
+              </Link>
+            ))}
 
           <ThemeToggle />
 
           {loading ? (
             <span className="text-muted-foreground text-sm">Loading...</span>
           ) : user ? (
-            // Logged in state
-            <div className="relative">
-              {/* User button - click to open dropdown */}
+            <div ref={menuRef} className="relative">
               <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 rounded-xl border bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium text-card-foreground shadow-sm hover:bg-accent"
               >
                 <span aria-hidden>👤</span>
                 <span className="hidden sm:inline max-w-[120px] truncate">{userName}</span>
-                <span className="text-muted-foreground text-xs" aria-hidden>▾</span>
+                <span className="text-muted-foreground text-xs" aria-hidden>
+                  ▾
+                </span>
               </button>
 
-              {/* Dropdown menu */}
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border bg-background p-2 shadow-lg">
-                  {/* Show role */}
+                <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-lg">
                   <div className="px-3 py-2 rounded-lg bg-muted text-muted-foreground text-xs font-semibold">
                     {userRole === "admin" ? "🔴 Admin" : userRole === "member" ? "🔵 Member" : "⚪ User"}
                   </div>
 
                   <hr className="my-2 border-border" />
 
-                  {/* Dashboard link based on role */}
-                  <div className="space-y-2">
-                    {userRole === "admin" ? (
-                      <Link 
-                        href="/admin" 
-                        onClick={() => setMenuOpen(false)}
-                        className="block px-3 py-2 rounded-lg text-sm hover:bg-accent"
-                      >
-                        Admin Dashboard
-                      </Link>
-                    ) : userRole === "member" ? (
-                      <>
-                        <Link 
-                          href="/member" 
-                          onClick={() => setMenuOpen(false)}
-                          className="block px-3 py-2 rounded-lg text-sm hover:bg-accent"
-                        >
-                          Member Dashboard
-                        </Link>
-                        <Link 
-                          href="/dashboard" 
-                          onClick={() => setMenuOpen(false)}
-                          className="block px-3 py-2 rounded-lg text-sm hover:bg-accent"
-                        >
-                          My Complaints
-                        </Link>
-                      </>
-                    ) : (
-                      <Link 
-                        href="/dashboard" 
-                        onClick={() => setMenuOpen(false)}
-                        className="block px-3 py-2 rounded-lg text-sm hover:bg-accent"
-                      >
-                        My Dashboard
-                      </Link>
-                    )}
-                  </div>
-
-                  <Link 
-                    href="/profile" 
+                  <Link
+                    href="/profile"
                     onClick={() => setMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-sm hover:bg-accent"
+                    className="block px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent"
                   >
-                    Update Profile
+                    Edit Profile
                   </Link>
 
                   <hr className="my-2 border-border" />
@@ -172,7 +171,6 @@ export default function NavbarWrapper() {
               )}
             </div>
           ) : (
-            // Logged out state
             <Link href="/login" className={cn(buttonVariants())}>
               Login
             </Link>

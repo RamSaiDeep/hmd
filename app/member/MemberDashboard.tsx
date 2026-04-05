@@ -1,18 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+
+type MemberView = "all" | "mine" | "events";
+
+type ComplaintItem = {
+  id: string;
+  place: string;
+  issueType: string;
+  issueDetail?: string | null;
+  status: string;
+  priority: string;
+  createdAt: string;
+  updatedBy?: string | null;
+  userId: string;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+  } | null;
+};
+
+type EventItem = {
+  id: string;
+  eventName: string;
+  organizerName: string;
+  eventDate: string;
+  departments: string[];
+  status: string;
+  memberResponse?: string | null;
+};
+
+const statusOptions = ["ALL", "Not Started", "In Progress", "Finished", "Invalid Request"];
+const priorityOptions = ["ALL", "Low", "Medium", "High"];
 
 export default function MemberDashboard({
   complaints,
   events,
   currentUser,
-}: any) {
-  const [view, setView] = useState<"all" | "mine" | "events">("all");
-
+  initialView = "all",
+}: {
+  complaints: ComplaintItem[];
+  events: EventItem[];
+  currentUser: { id: string };
+  initialView?: MemberView;
+}) {
+  const [view, setView] = useState<MemberView>(initialView);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [priorityFilter, setPriorityFilter] = useState("ALL");
+  const [searchText, setSearchText] = useState("");
 
-  // 🔥 Update complaint (real DB)
   async function updateComplaint(id: string, field: string, value: string) {
     await fetch("/api/complaints/update", {
       method: "POST",
@@ -22,183 +61,248 @@ export default function MemberDashboard({
       }),
     });
 
-    // simple refresh
     window.location.reload();
   }
 
-  // 🔥 Save event response (you can connect API later)
-  function saveEventResponse(id: string) {
+  function saveEventResponse() {
     alert("Event response saved (connect API later)");
     setRespondingId(null);
     setResponseText("");
   }
 
-  const visibleComplaints =
-    view === "mine"
-      ? complaints.filter((c: any) => c.userId === currentUser.id)
-      : complaints;
+  const baseComplaints = useMemo(
+    () => (view === "mine" ? complaints.filter((c) => c.userId === currentUser.id) : complaints),
+    [view, complaints, currentUser.id]
+  );
+
+  const visibleComplaints = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
+
+    return baseComplaints.filter((c) => {
+      const statusMatch = statusFilter === "ALL" || c.status === statusFilter;
+      const priorityMatch = priorityFilter === "ALL" || c.priority === priorityFilter;
+      const textMatch =
+        query.length === 0 ||
+        c.place.toLowerCase().includes(query) ||
+        c.issueType.toLowerCase().includes(query) ||
+        (c.issueDetail ?? "").toLowerCase().includes(query) ||
+        (c.user?.name ?? c.user?.email ?? "").toLowerCase().includes(query);
+
+      return statusMatch && priorityMatch && textMatch;
+    });
+  }, [baseComplaints, priorityFilter, searchText, statusFilter]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Member Dashboard</h1>
+    <div className="mx-auto w-full max-w-7xl px-4 py-8">
+      <h1 className="text-2xl font-semibold text-foreground">Member Dashboard</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Manage all hostel complaints and event requests.</p>
 
-      {/* Tabs */}
-      <div style={{ marginBottom: "20px" }}>
-        <button onClick={() => setView("all")}>All Complaints</button>
-        <button onClick={() => setView("mine")}>My Complaints</button>
-        <button onClick={() => setView("events")}>Event Requests</button>
+      <div className="mt-6 flex flex-wrap gap-2">
+        {[
+          { key: "all", label: `All Complaints (${complaints.length})` },
+          { key: "mine", label: `My Complaints (${complaints.filter((c) => c.userId === currentUser.id).length})` },
+          { key: "events", label: `Event Requests (${events.length})` },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setView(tab.key as MemberView)}
+            className={cn(
+              "rounded-lg border px-3 py-2 text-sm font-medium",
+              view === tab.key
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-card-foreground hover:bg-accent"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* ===================== COMPLAINTS ===================== */}
       {(view === "all" || view === "mine") && (
-        <div>
-          <h2>
-            {view === "all" ? "All Complaints" : "My Complaints"} (
-            {visibleComplaints.length})
-          </h2>
+        <section className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-card-foreground">
+              {view === "all" ? "All Complaints" : "My Complaints"}
+            </h2>
+            <span className="text-sm text-muted-foreground">{visibleComplaints.length} showing</span>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search place / issue / user"
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+            >
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status === "ALL" ? "All Statuses" : status}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+            >
+              {priorityOptions.map((priority) => (
+                <option key={priority} value={priority}>
+                  {priority === "ALL" ? "All Priorities" : priority}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => {
+                setSearchText("");
+                setStatusFilter("ALL");
+                setPriorityFilter("ALL");
+              }}
+              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground hover:bg-accent"
+            >
+              Reset filters
+            </button>
+          </div>
 
           {visibleComplaints.length === 0 ? (
-            <p>No complaints found.</p>
+            <p className="mt-4 text-sm text-muted-foreground">No complaints match this filter.</p>
           ) : (
-            <table border={1} width="100%" cellPadding={8}>
-              <thead>
-                <tr>
-                  <th>Place</th>
-                  <th>Issue</th>
-                  <th>User</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Priority</th>
-                  <th>Updated By</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleComplaints.map((c: any) => (
-                  <tr key={c.id}>
-                    <td>{c.place}</td>
-
-                    <td>
-                      {c.issueType}
-                      {c.issueDetail && ` — ${c.issueDetail}`}
-                    </td>
-
-                    <td>{c.user?.name || c.user?.email}</td>
-
-                    <td>
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </td>
-
-                    {/* STATUS */}
-                    <td>
-                      <select
-                        value={c.status}
-                        onChange={(e) =>
-                          updateComplaint(c.id, "status", e.target.value)
-                        }
-                      >
-                        <option value="NOT_STARTED">Not Started</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="FINISHED">Finished</option>
-                        <option value="INVALID">Invalid</option>
-                      </select>
-                    </td>
-
-                    {/* PRIORITY */}
-                    <td>
-                      <select
-                        value={c.priority}
-                        onChange={(e) =>
-                          updateComplaint(c.id, "priority", e.target.value)
-                        }
-                      >
-                        <option value="LOW">Low</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="HIGH">High</option>
-                      </select>
-                    </td>
-
-                    {/* UPDATED BY */}
-                    <td>{c.updatedBy || "—"}</td>
+            <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="px-3 py-2">Place</th>
+                    <th className="px-3 py-2">Issue</th>
+                    <th className="px-3 py-2">User</th>
+                    <th className="px-3 py-2">Date</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Priority</th>
+                    <th className="px-3 py-2">Updated By</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {visibleComplaints.map((c) => (
+                    <tr key={c.id} className="border-t border-border">
+                      <td className="px-3 py-2">{c.place}</td>
+                      <td className="px-3 py-2">
+                        {c.issueType}
+                        {c.issueDetail ? ` — ${c.issueDetail}` : ""}
+                      </td>
+                      <td className="px-3 py-2">{c.user?.name || c.user?.email}</td>
+                      <td className="px-3 py-2">{new Date(c.createdAt).toLocaleDateString()}</td>
+                      <td className="px-3 py-2">
+                        <select
+                          value={c.status}
+                          onChange={(e) => updateComplaint(c.id, "status", e.target.value)}
+                          className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+                        >
+                          <option value="Not Started">Not Started</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Finished">Finished</option>
+                          <option value="Invalid Request">Invalid Request</option>
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        <select
+                          value={c.priority}
+                          onChange={(e) => updateComplaint(c.id, "priority", e.target.value)}
+                          className="rounded-md border border-input bg-background px-2 py-1 text-xs"
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">{c.updatedBy || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </div>
+        </section>
       )}
 
-      {/* ===================== EVENTS ===================== */}
       {view === "events" && (
-        <div>
-          <h2>Event Requests ({events.length})</h2>
+        <section className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-card-foreground">Event Requests ({events.length})</h2>
 
           {events.length === 0 ? (
-            <p>No events found.</p>
+            <p className="mt-4 text-sm text-muted-foreground">No events found.</p>
           ) : (
-            <table border={1} width="100%" cellPadding={8}>
-              <thead>
-                <tr>
-                  <th>Event</th>
-                  <th>Organizer</th>
-                  <th>Date</th>
-                  <th>Departments</th>
-                  <th>Status</th>
-                  <th>Response</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {events.map((e: any) => (
-                  <>
-                    <tr key={e.id}>
-                      <td>{e.eventName}</td>
-                      <td>{e.organizerName}</td>
-                      <td>{e.eventDate}</td>
-                      <td>{e.departments.join(", ")}</td>
-                      <td>{e.status}</td>
-                      <td>{e.memberResponse || "No response yet"}</td>
-
-                      <td>
-                        <button
-                          onClick={() => {
-                            if (respondingId === e.id) {
-                              setRespondingId(null);
-                            } else {
-                              setRespondingId(e.id);
-                              setResponseText(e.memberResponse || "");
-                            }
-                          }}
-                        >
-                          {respondingId === e.id ? "Cancel" : "Respond"}
-                        </button>
-                      </td>
-                    </tr>
-
-                    {respondingId === e.id && (
-                      <tr>
-                        <td colSpan={7}>
-                          <textarea
-                            rows={4}
-                            value={responseText}
-                            onChange={(e) =>
-                              setResponseText(e.target.value)
-                            }
-                            style={{ width: "100%" }}
-                          />
-                          <br />
-                          <button onClick={() => saveEventResponse(e.id)}>
-                            Send Response
+            <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="px-3 py-2">Event</th>
+                    <th className="px-3 py-2">Organizer</th>
+                    <th className="px-3 py-2">Date</th>
+                    <th className="px-3 py-2">Departments</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Response</th>
+                    <th className="px-3 py-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.map((e) => (
+                    <Fragment key={e.id}>
+                      <tr className="border-t border-border">
+                        <td className="px-3 py-2">{e.eventName}</td>
+                        <td className="px-3 py-2">{e.organizerName}</td>
+                        <td className="px-3 py-2">{e.eventDate}</td>
+                        <td className="px-3 py-2">{e.departments.join(", ")}</td>
+                        <td className="px-3 py-2">{e.status}</td>
+                        <td className="px-3 py-2">{e.memberResponse || "No response yet"}</td>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => {
+                              if (respondingId === e.id) {
+                                setRespondingId(null);
+                              } else {
+                                setRespondingId(e.id);
+                                setResponseText(e.memberResponse || "");
+                              }
+                            }}
+                            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
+                          >
+                            {respondingId === e.id ? "Cancel" : "Respond"}
                           </button>
                         </td>
                       </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
+
+                      {respondingId === e.id && (
+                        <tr key={`respond-${e.id}`} className="border-t border-border">
+                          <td colSpan={7} className="px-3 py-3">
+                            <textarea
+                              rows={4}
+                              value={responseText}
+                              onChange={(event) => setResponseText(event.target.value)}
+                              className="w-full rounded-md border border-input bg-background p-2 text-sm text-foreground"
+                            />
+                            <button
+                              onClick={saveEventResponse}
+                              className="mt-2 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                            >
+                              Send Response
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </div>
+        </section>
       )}
     </div>
   );
