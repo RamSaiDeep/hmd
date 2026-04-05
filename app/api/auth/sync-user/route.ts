@@ -13,16 +13,30 @@ export async function POST() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
+    if (!user.email?.trim()) {
+      return NextResponse.json({ error: "User email missing" }, { status: 400 });
+    }
+
+    const normalizedEmail = user.email.trim().toLowerCase();
+
     const dbUser = await prisma.user.upsert({
-      where: { email: user.email! },
-      update: {},
+      where: { id: user.id },
+      update: {
+        email: normalizedEmail,
+        name: user.user_metadata?.name ?? null,
+        phone: user.user_metadata?.phone ?? null,
+        room: user.user_metadata?.room ?? null,
+        role: user.user_metadata?.role ?? "user",
+        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
+      },
       create: {
         id: user.id, // 🔥 SAME as Supabase ID
-        email: user.email!,
+        email: normalizedEmail,
         name: user.user_metadata?.name || null,
         phone: user.user_metadata?.phone || null,
         room: user.user_metadata?.room || null,
-        role: "user",
+        role: user.user_metadata?.role || "user",
+        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
       },
     });
 
@@ -37,4 +51,3 @@ export async function POST() {
     );
   }
 }
-

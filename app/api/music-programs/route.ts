@@ -2,6 +2,23 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
+type SoundItem = {
+  item?: string;
+  quantity?: string;
+};
+
+type MusicRequestBody = {
+  eventName?: string;
+  organizer?: string;
+  eventDate?: string;
+  eventTime?: string;
+  venue?: string;
+  soundItems?: SoundItem[];
+  needsLight?: boolean;
+  lighting?: string[];
+  notes?: string;
+};
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -10,14 +27,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not logged in" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as any;
+  const body = (await req.json().catch(() => null)) as MusicRequestBody | null;
 
   if (!body?.eventName?.trim() || !body?.organizer?.trim() || !body?.eventDate?.trim() || !body?.venue?.trim()) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   // Validate sound items
-  if (!body?.soundItems?.length || body.soundItems.every((item: any) => !item.item?.trim() || !item.quantity?.trim())) {
+  if (!body?.soundItems?.length || body.soundItems.every((item) => !item.item?.trim() || !item.quantity?.trim())) {
     return NextResponse.json({ error: "At least one sound item is required" }, { status: 400 });
   }
 

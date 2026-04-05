@@ -51,9 +51,6 @@ export default function EventSupport() {
 
   async function handleSubmit() {
     // Get form values
-    const form = document.querySelector('form') as HTMLFormElement;
-    const formData = new FormData(form);
-    
     const eventName = (document.getElementById('eventName') as HTMLInputElement)?.value || '';
     const organizerName = (document.getElementById('organizerName') as HTMLInputElement)?.value || '';
     const eventDate = (document.getElementById('eventDate') as HTMLInputElement)?.value || '';

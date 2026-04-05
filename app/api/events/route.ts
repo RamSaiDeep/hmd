@@ -2,6 +2,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
+type EventRequestBody = {
+  eventName?: string;
+  organizerName?: string;
+  eventDate?: string;
+  eventTime?: string;
+  venue?: string;
+  departments?: string[];
+  dhwaniItems?: unknown[];
+  prakashVenue?: string;
+  prakashLighting?: string[];
+  kritiNeeds?: string;
+  notes?: string;
+};
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -10,7 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not logged in" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as any;
+  const body = (await req.json().catch(() => null)) as EventRequestBody | null;
 
   if (!body?.eventName?.trim() || !body?.organizerName?.trim() || !body?.eventDate?.trim() || !body?.venue?.trim()) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
