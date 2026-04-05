@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       console.log("Auth callback — session created, syncing user to database");
 
       // Ensure Prisma User row exists right after email verification/OAuth callback.
-      await fetch(`${origin}/api/user/sync`, {
+      await fetch(`${origin}/api/auth/sync-user`, {
         method: "POST",
         headers: { Cookie: request.headers.get("cookie") ?? "" },
       });

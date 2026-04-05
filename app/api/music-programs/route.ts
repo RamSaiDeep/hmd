@@ -10,61 +10,57 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not logged in" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as null | {
-    eventName?: string;
-    organizer?: string;
-    eventDate?: string;
-    eventTime?: string;
-    venue?: string;
-    soundItems?: Array<{ item: string; quantity: string }>;
-    needsLight?: boolean;
-    lighting?: string[];
-    notes?: string;
-  };
+  const body = await req.json().catch(() => null) as any;
 
   if (!body?.eventName?.trim() || !body?.organizer?.trim() || !body?.eventDate?.trim() || !body?.venue?.trim()) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   // Validate sound items
-  if (!body?.soundItems?.length || body.soundItems.every(item => !item.item.trim())) {
+  if (!body?.soundItems?.length || body.soundItems.every((item: any) => !item.item?.trim() || !item.quantity?.trim())) {
     return NextResponse.json({ error: "At least one sound item is required" }, { status: 400 });
   }
 
-  // Ensure user exists in Prisma DB
-  await prisma.user.upsert({
-    where: { email: user.email! },
-    update: {
-      name: user.user_metadata?.name ?? undefined,
-      phone: user.user_metadata?.phone ?? undefined,
-      room: user.user_metadata?.room ?? undefined,
-      role: user.user_metadata?.role ?? undefined,
-      emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : undefined,
-    },
-    create: {
-      id: user.id,
-      email: user.email!,
-      name: user.user_metadata?.name ?? null,
-      phone: user.user_metadata?.phone ?? null,
-      room: user.user_metadata?.room ?? null,
-      role: user.user_metadata?.role ?? "user",
-      emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-    },
-  });
+  try {
+    // Ensure user exists in database using the sync API
+    console.log("Music Programs API - Ensuring user sync for:", user.email);
+    
+    const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/user/ensure-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
 
-  const musicRequest = await prisma.musicRequest.create({
-    data: {
-      eventName: body.eventName.trim(),
-      organizer: body.organizer.trim(),
-      eventDate: body.eventDate.trim(),
-      eventTime: body.eventTime?.trim() || null,
-      venue: body.venue.trim(),
-      soundItems: body.soundItems,
-      needsLight: body.needsLight || false,
-      lighting: body.lighting || [],
-      notes: body.notes?.trim() || null,
-    },
-  });
+    if (!syncResponse.ok) {
+      const syncError = await syncResponse.json().catch(() => ({}));
+      console.error("Music Programs API - User sync failed:", syncError);
+      return NextResponse.json({ 
+        error: "User sync failed: " + (syncError.error || "Unknown sync error") 
+      }, { status: 500 });
+    }
 
-  return NextResponse.json({ musicRequest }, { status: 201 });
+    const syncResult = await syncResponse.json();
+    console.log("Music Programs API - User sync successful:", syncResult.message);
+
+    const musicRequest = await prisma.musicRequest.create({
+      data: {
+        eventName: body.eventName.trim(),
+        organizer: body.organizer.trim(),
+        eventDate: body.eventDate.trim(),
+        eventTime: body.eventTime?.trim() || null,
+        venue: body.venue.trim(),
+        soundItems: body.soundItems,
+        needsLight: body.needsLight || false,
+        lighting: body.needsLight ? (body.lighting || []) : [],
+        notes: body.notes?.trim() || null,
+      },
+    });
+
+    console.log("Music Programs API - Music request created successfully:", musicRequest.id);
+    return NextResponse.json({ musicRequest }, { status: 201 });
+  } catch (dbError) {
+    console.error("Music Programs API - Database error:", dbError);
+    return NextResponse.json({ 
+      error: "Database error: " + (dbError instanceof Error ? dbError.message : "Unknown error")
+    }, { status: 500 });
+  }
 }

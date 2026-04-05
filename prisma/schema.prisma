@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  engineType = "binary"
 }
 
 datasource db {
@@ -8,7 +9,7 @@ datasource db {
 
 // User model - stores all users (regular, member, admin)
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id 
   name          String?
   email         String    @unique
   emailVerified DateTime?
@@ -29,7 +30,7 @@ model User {
 
 // NextAuth required models
 model Account {
-  id                String  @id @default(cuid())
+  id                String  @id 
   userId            String
   type              String
   provider          String
@@ -48,7 +49,7 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id 
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -66,7 +67,7 @@ model VerificationToken {
 
 // Complaint model
 model Complaint {
-  id          String   @id @default(cuid())
+  id          String   @id 
   userId      String
   place       String
   issueType   String   // Fan, Light, Switch, Cupboard, Lock, Electrical, Other
@@ -83,7 +84,7 @@ model Complaint {
 
 // Event request model
 model EventRequest {
-  id             String   @id @default(cuid())
+  id             String   @id 
   eventName      String
   organizerName  String
   eventDate      String
@@ -102,7 +103,7 @@ model EventRequest {
 
 // Music program request
 model MusicRequest {
-  id          String   @id @default(cuid())
+  id          String   @id 
   eventName   String
   organizer   String
   eventDate   String
@@ -119,7 +120,7 @@ model MusicRequest {
 
 // SRDRS studio booking
 model StudioBooking {
-  id          String   @id @default(cuid())
+  id          String   @id 
   userId      String
   day         String
   slot        String
