@@ -42,9 +42,28 @@ export default async function MemberPage({
 
   return (
     <MemberDashboard
-      complaints={complaints}
-      events={events}
-      currentUser={dbUser}
+      complaints={complaints.map((c) => ({
+        id: c.id,
+        place: c.place,
+        issueType: c.issueType,
+        issueDetail: c.issueDetail,
+        status: c.status,
+        priority: c.priority,
+        createdAt: c.createdAt.toISOString(),
+        updatedBy: c.updatedBy,
+        userId: c.userId,
+        user: c.user ? { name: c.user.name, email: c.user.email } : null,
+      }))}
+      events={events.map((e) => ({
+        id: e.id,
+        eventName: e.eventName,
+        organizerName: e.organizerName,
+        eventDate: e.eventDate,
+        departments: e.departments,
+        status: e.status,
+        memberResponse: e.memberResponse,
+      }))}
+      currentUser={{ id: dbUser.id }}
       initialView={initialView}
     />
   );

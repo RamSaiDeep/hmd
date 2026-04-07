@@ -9,6 +9,12 @@ import { cn } from "@/lib/utils";
 import type { Complaint } from "@prisma/client";
 import type { User } from "@supabase/supabase-js";
 
+const dateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -107,7 +113,7 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell>{c.status}</TableCell>
                     <TableCell>{c.priority}</TableCell>
-                    <TableCell>{new Date(c.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{dateFormatter.format(new Date(c.createdAt))}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -26,5 +26,38 @@ export default async function AdminPage() {
     prisma.user.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
-  return <AdminDashboard complaints={complaints} events={events} users={users} currentUser={dbUser} />;
+  return (
+    <AdminDashboard
+      complaints={complaints.map((c) => ({
+        id: c.id,
+        place: c.place,
+        issueType: c.issueType,
+        issueDetail: c.issueDetail,
+        status: c.status,
+        priority: c.priority,
+        createdAt: c.createdAt.toISOString(),
+        updatedBy: c.updatedBy,
+        userId: c.userId,
+        user: c.user ? { name: c.user.name, email: c.user.email } : null,
+      }))}
+      events={events.map((e) => ({
+        id: e.id,
+        eventName: e.eventName,
+        organizerName: e.organizerName,
+        eventDate: e.eventDate,
+        departments: e.departments,
+        status: e.status,
+        memberResponse: e.memberResponse,
+      }))}
+      users={users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        room: u.room,
+        phone: u.phone,
+        role: u.role,
+      }))}
+      currentUser={{ id: dbUser.id }}
+    />
+  );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { Prisma } from "@prisma/client";
 
 type EventRequestBody = {
   eventName?: string;
@@ -9,7 +10,7 @@ type EventRequestBody = {
   eventTime?: string;
   venue?: string;
   departments?: string[];
-  dhwaniItems?: unknown[];
+  dhwaniItems?: unknown;
   prakashVenue?: string;
   prakashLighting?: string[];
   kritiNeeds?: string;
@@ -50,6 +51,11 @@ export async function POST(req: Request) {
     const syncResult = await syncResponse.json();
     console.log("Events API - User sync successful:", syncResult.message);
 
+    const dhwaniItems =
+      Array.isArray(body.dhwaniItems) && body.dhwaniItems.length > 0
+        ? (body.dhwaniItems as Prisma.InputJsonValue)
+        : undefined;
+
     const eventRequest = await prisma.eventRequest.create({
       data: {
         eventName: body.eventName.trim(),
@@ -57,7 +63,7 @@ export async function POST(req: Request) {
         eventDate: body.eventDate.trim(),
         eventTime: body.eventTime?.trim() || null,
         departments: body.departments || [],
-        dhwaniItems: body.dhwaniItems && body.dhwaniItems.length > 0 ? body.dhwaniItems : undefined,
+        dhwaniItems,
         prakashVenue: body.prakashVenue?.trim() || null,
         prakashLighting: body.prakashLighting || [],
         kritiNeeds: body.kritiNeeds?.trim() || null,

@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 type AdminView = "complaints" | "events" | "users";
 type ComplaintScope = "all" | "mine";
 
+const dateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
 type ComplaintItem = {
   id: string;
   place: string;
@@ -185,6 +191,7 @@ export default function AdminDashboard({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter complaints by status"
               className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
             >
               {statusOptions.map((status) => (
@@ -196,6 +203,7 @@ export default function AdminDashboard({
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
+              aria-label="Filter complaints by priority"
               className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
             >
               {priorityOptions.map((priority) => (
@@ -239,11 +247,12 @@ export default function AdminDashboard({
                       {c.issueDetail ? ` — ${c.issueDetail}` : ""}
                     </td>
                     <td className="px-3 py-2">{c.user?.name || c.user?.email}</td>
-                    <td className="px-3 py-2">{new Date(c.createdAt).toLocaleDateString()}</td>
+                    <td className="px-3 py-2">{dateFormatter.format(new Date(c.createdAt))}</td>
                     <td className="px-3 py-2">
                       <select
                         value={c.status}
                         onChange={(e) => updateComplaint(c.id, "status", e.target.value)}
+                        aria-label={`Update status for complaint ${c.id}`}
                         className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                       >
                         <option value="Not Started">Not Started</option>
@@ -256,6 +265,7 @@ export default function AdminDashboard({
                       <select
                         value={c.priority}
                         onChange={(e) => updateComplaint(c.id, "priority", e.target.value)}
+                        aria-label={`Update priority for complaint ${c.id}`}
                         className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                       >
                         <option value="Low">Low</option>
