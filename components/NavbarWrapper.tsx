@@ -16,8 +16,11 @@ type NavLink = {
   label: string;
 };
 
+type UserRole = "user" | "member" | "admin";
+
 export default function NavbarWrapper() {
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>("user");
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
@@ -25,11 +28,31 @@ export default function NavbarWrapper() {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    async function fetchRole() {
+      try {
+        const response = await fetch("/api/user/me", { cache: "no-store" });
+        if (!response.ok) {
+          setUserRole("user");
+          return;
+        }
+
+        const data = (await response.json()) as { role?: string };
+        setUserRole(data.role === "admin" || data.role === "member" ? data.role : "user");
+      } catch {
+        setUserRole("user");
+      }
+    }
+
     async function getUser() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        await fetchRole();
+      } else {
+        setUserRole("user");
+      }
       setLoading(false);
     }
 
@@ -39,6 +62,11 @@ export default function NavbarWrapper() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        void fetchRole();
+      } else {
+        setUserRole("user");
+      }
       setLoading(false);
       setMenuOpen(false);
     });
@@ -70,8 +98,6 @@ export default function NavbarWrapper() {
   }
 
   const userName = user?.user_metadata?.name ?? user?.email ?? "";
-  const userRole = user?.user_metadata?.role ?? "user";
-
   const navLinks: NavLink[] =
     userRole === "admin"
       ? [

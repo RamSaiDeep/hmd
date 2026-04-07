@@ -39,10 +39,10 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", figtree.variable)}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col bg-background text-foreground transition-colors" suppressHydrationWarning>
         <Providers>
           <NavbarWrapper />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 bg-background text-foreground transition-colors">{children}</main>
         </Providers>
       </body>
     </html>

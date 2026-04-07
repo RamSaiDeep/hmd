@@ -62,6 +62,7 @@ export default function AdminDashboard({
   const [searchText, setSearchText] = useState("");
   const [deletingComplaintId, setDeletingComplaintId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
 
   async function updateComplaint(id: string, field: "status" | "priority", value: string) {
     await fetch("/api/complaints/update", {
@@ -89,6 +90,15 @@ export default function AdminDashboard({
     await fetch("/api/admin/users/delete", {
       method: "POST",
       body: JSON.stringify({ id }),
+    });
+    window.location.reload();
+  }
+
+  async function updateUserRole(id: string, role: "user" | "member") {
+    setUpdatingRoleUserId(id);
+    await fetch("/api/admin/users/role", {
+      method: "POST",
+      body: JSON.stringify({ id, role }),
     });
     window.location.reload();
   }
@@ -315,6 +325,7 @@ export default function AdminDashboard({
                   <th className="px-3 py-2">Room</th>
                   <th className="px-3 py-2">Phone</th>
                   <th className="px-3 py-2">Role</th>
+                  <th className="px-3 py-2">Role Action</th>
                   <th className="px-3 py-2">Delete</th>
                 </tr>
               </thead>
@@ -326,6 +337,25 @@ export default function AdminDashboard({
                     <td className="px-3 py-2">{user.room || "—"}</td>
                     <td className="px-3 py-2">{user.phone || "—"}</td>
                     <td className="px-3 py-2 capitalize">{user.role}</td>
+                    <td className="px-3 py-2">
+                      {user.role === "admin" ? (
+                        <span className="text-xs text-muted-foreground">Protected</span>
+                      ) : (
+                        <button
+                          onClick={() => updateUserRole(user.id, user.role === "member" ? "user" : "member")}
+                          disabled={updatingRoleUserId === user.id || user.id === currentUser.id}
+                          className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-accent disabled:opacity-60"
+                        >
+                          {updatingRoleUserId === user.id
+                            ? "Updating..."
+                            : user.id === currentUser.id
+                            ? "Protected"
+                            : user.role === "member"
+                            ? "Make User"
+                            : "Make Member"}
+                        </button>
+                      )}
+                    </td>
                     <td className="px-3 py-2">
                       <button
                         onClick={() => deleteUser(user.id)}
