@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -27,6 +28,13 @@ export async function POST(request: Request) {
 
     if (id === admin.id) {
       return NextResponse.json({ error: "You cannot delete your own admin account" }, { status: 400 });
+    }
+
+    const supabaseAdmin = createAdminClient();
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
+
+    if (authDeleteError) {
+      return NextResponse.json({ error: `Failed to delete auth user: ${authDeleteError.message}` }, { status: 500 });
     }
 
     await prisma.user.delete({ where: { id } });
