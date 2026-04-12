@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
 const allowedStatuses = ["Not Started", "In Progress", "Finished", "Invalid Request"];
@@ -7,6 +7,7 @@ const allowedPriorities = ["Low", "Medium", "High"];
 
 export async function POST(request: Request) {
   try {
+    const prisma = getPrismaClient();
     const supabase = await createClient();
     const {
       data: { user },

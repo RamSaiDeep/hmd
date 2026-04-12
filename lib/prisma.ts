@@ -6,19 +6,19 @@ type GlobalForPrisma = typeof globalThis & {
 
 const globalForPrisma = globalThis as GlobalForPrisma;
 
-function getPrismaClient(): PrismaClient {
+export function getPrismaClient(): PrismaClient {
   if (!globalForPrisma.prisma) {
     console.info("[prisma] Initializing new Prisma client");
 
     globalForPrisma.prisma = new PrismaClient({
-      log: ["query", "info", "warn", "error"],
+      log:
+        process.env.NODE_ENV === "development"
+          ? ["query", "info", "warn", "error"]
+          : ["error"],
     });
-
   } else {
     console.info("[prisma] Reusing Prisma client");
   }
 
   return globalForPrisma.prisma;
 }
-
-export const prisma = getPrismaClient();
