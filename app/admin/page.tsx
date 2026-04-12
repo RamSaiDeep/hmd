@@ -1,3 +1,4 @@
+import { findAppUserForSupabaseUser } from "@/lib/app-user";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -12,9 +13,7 @@ export default async function AdminPage() {
 
   if (!user) return redirect("/login");
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: user.email! },
-  });
+  const dbUser = await findAppUserForSupabaseUser(user);
 
   if (!dbUser || dbUser.role !== "admin") {
     return <h1>Access Denied 🚫</h1>;

@@ -1,7 +1,8 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+
+import { syncAppUserFromSupabaseUser } from "@/lib/app-user";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
@@ -9,7 +10,11 @@ export async function POST() {
     console.info("[auth/sync-user] Sync request started");
     const supabase = await createClient();
     console.info("[auth/sync-user] Supabase server client created");
-    const { data: { user }, error } = await supabase.auth.getUser();
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     console.info("[auth/sync-user] Supabase auth.getUser completed", {
       hasUser: Boolean(user),
       hasError: Boolean(error),
@@ -25,36 +30,15 @@ export async function POST() {
       return NextResponse.json({ error: "User email missing" }, { status: 400 });
     }
 
-    const normalizedEmail = user.email.trim().toLowerCase();
     console.info("[auth/sync-user] Upserting user into Prisma", {
       userId: user.id,
-      email: normalizedEmail,
+      email: user.email.trim().toLowerCase(),
     });
 
-    const dbUser = await prisma.user.upsert({
-      where: { id: user.id },
-      update: {
-        email: normalizedEmail,
-        name: user.user_metadata?.name ?? null,
-        phone: user.user_metadata?.phone ?? null,
-        room: user.user_metadata?.room ?? null,
-        role: user.user_metadata?.role ?? "user",
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-      },
-      create: {
-        id: user.id, // 🔥 SAME as Supabase ID
-        email: normalizedEmail,
-        name: user.user_metadata?.name || null,
-        phone: user.user_metadata?.phone || null,
-        room: user.user_metadata?.room || null,
-        role: user.user_metadata?.role || "user",
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-      },
-    });
+    const dbUser = await syncAppUserFromSupabaseUser(user);
     console.info("[auth/sync-user] Prisma upsert successful", { userId: dbUser.id });
 
     return NextResponse.json({ user: dbUser });
-
   } catch (error) {
     console.error("Sync user error:", error);
 
@@ -75,9 +59,6 @@ export async function POST() {
       );
     }
 
-    return NextResponse.json(
-      { error: "Failed to sync user" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to sync user" }, { status: 500 });
   }
 }

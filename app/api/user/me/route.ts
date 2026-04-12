@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { findAppUserForSupabaseUser } from "@/lib/app-user";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAppRole } from "@/lib/user-role";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -15,13 +18,15 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const dbUser =
-      (await prisma.user.findUnique({ where: { id: user.id } })) ??
-      (user.email ? await prisma.user.findUnique({ where: { email: user.email } }) : null);
+    const dbUser = await findAppUserForSupabaseUser(user);
 
     return NextResponse.json({
-      id: user.id,
+      id: dbUser?.id ?? user.id,
       role: resolveAppRole(dbUser?.role, user),
+    }, {
+      headers: {
+        "Cache-Control": "private, no-store, no-cache, max-age=0, must-revalidate",
+      },
     });
   } catch (error) {
     console.error("GET /api/user/me error:", error);

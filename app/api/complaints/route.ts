@@ -1,3 +1,4 @@
+import { findAppUserForSupabaseUser, syncAppUserFromSupabaseUser } from "@/lib/app-user";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
@@ -13,9 +14,7 @@ export async function GET() {
     }
 
     // 🔥 Get user from DB
-    const dbUser = await prisma.user.findUnique({
-      where: { email: user.email! },
-    });
+    const dbUser = await findAppUserForSupabaseUser(user);
 
     if (!dbUser) {
       return NextResponse.json({ complaints: [] });
@@ -73,29 +72,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const normalizedEmail = user.email.trim().toLowerCase();
-
-    // Ensure user exists in Prisma (complaints should work for normal "user" role too)
-    const dbUser = await prisma.user.upsert({
-      where: { id: user.id },
-      update: {
-        email: normalizedEmail,
-        name: user.user_metadata?.name ?? null,
-        phone: user.user_metadata?.phone ?? null,
-        room: user.user_metadata?.room ?? null,
-        role: user.user_metadata?.role ?? "user",
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-      },
-      create: {
-        id: user.id,
-        email: normalizedEmail,
-        name: user.user_metadata?.name ?? null,
-        phone: user.user_metadata?.phone ?? null,
-        room: user.user_metadata?.room ?? null,
-        role: user.user_metadata?.role ?? "user",
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-      },
-    });
+    const dbUser = await syncAppUserFromSupabaseUser(user);
 
     const complaint = await prisma.complaint.create({
       data: {

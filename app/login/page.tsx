@@ -30,6 +30,12 @@ function LoginContent() {
   const googleClass =
     "w-full rounded-xl border border-white/20 bg-slate-900/70 px-4 py-3 text-sm text-white hover:border-cyan-400/60";
 
+  function buildAuthCallbackUrl(nextPath: string) {
+    const callbackUrl = new URL("/auth/callback", window.location.origin);
+    callbackUrl.searchParams.set("next", nextPath);
+    return callbackUrl.toString();
+  }
+
   // 🔥 LOGIN
   async function handleLogin() {
     setLoading(true);
@@ -77,7 +83,7 @@ function LoginContent() {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -87,7 +93,7 @@ function LoginContent() {
           room,
           role: "user",
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: buildAuthCallbackUrl("/login?verified=true"),
       },
     });
 
@@ -96,10 +102,10 @@ function LoginContent() {
     } else {
       setSuccess("Account created! Please verify your email.");
 
-      // ⏳ Delay ensures session is available
-      setTimeout(async () => {
+      // Sync immediately when Supabase returns a session during signup.
+      if (data.session) {
         await fetch("/api/auth/sync-user", { method: "POST", credentials: "include" });
-      }, 1000);
+      }
     }
 
     setLoading(false);
@@ -110,7 +116,7 @@ function LoginContent() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: buildAuthCallbackUrl("/dashboard"),
       },
     });
 

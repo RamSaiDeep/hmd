@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+
+import { syncAppUserFromSupabaseUser } from "@/lib/app-user";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
@@ -8,8 +9,10 @@ export async function POST() {
     const supabase = await createClient();
     console.info("[user/sync] Supabase server client created");
 
-    // Get current logged in user
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     console.info("[user/sync] Supabase auth.getUser completed", {
       hasUser: Boolean(user),
       hasError: Boolean(error),
@@ -17,10 +20,7 @@ export async function POST() {
 
     if (error || !user) {
       console.log("Sync error: No user logged in");
-      return NextResponse.json(
-        { error: "Not logged in" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Not logged in" }, { status: 401 });
     }
 
     if (!user.email?.trim()) {
@@ -32,94 +32,14 @@ export async function POST() {
 
     const normalizedEmail = user.email.trim().toLowerCase();
     console.log("Syncing user:", normalizedEmail);
-    console.info("[user/sync] Checking for existing Prisma records", {
-      userId: user.id,
-      email: normalizedEmail,
-    });
 
-    const { name, phone, room, role } = user.user_metadata;
-
-    const existingById = await prisma.user.findUnique({
-      where: { id: user.id },
-    });
-    const existingByEmail = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-    console.info("[user/sync] Existing user lookup complete", {
-      foundById: Boolean(existingById),
-      foundByEmail: Boolean(existingByEmail),
-    });
-
-    if (existingById && existingByEmail && existingById.id !== existingByEmail.id) {
-      console.info("[user/sync] Entering merge path: existingById and existingByEmail mismatch");
-      await prisma.user.update({
-        where: { id: existingByEmail.id },
-        data: {
-          name: name ?? existingByEmail.name,
-          phone: phone ?? existingByEmail.phone,
-          room: room ?? existingByEmail.room,
-          role: role ?? existingByEmail.role,
-          emailVerified: user.email_confirmed_at
-            ? new Date(user.email_confirmed_at)
-            : existingByEmail.emailVerified,
-        },
-      });
-      console.log("User synced using email-linked record:", normalizedEmail);
-    } else if (existingById) {
-      console.info("[user/sync] Entering update-by-id path");
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          email: normalizedEmail,
-          name: name ?? existingById.name,
-          phone: phone ?? existingById.phone,
-          room: room ?? existingById.room,
-          role: role ?? existingById.role,
-          emailVerified: user.email_confirmed_at
-            ? new Date(user.email_confirmed_at)
-            : existingById.emailVerified,
-        },
-      });
-      console.log("User updated by id in database:", normalizedEmail);
-    } else if (existingByEmail) {
-      console.info("[user/sync] Entering update-by-email path");
-      await prisma.user.update({
-        where: { email: normalizedEmail },
-        data: {
-          name: name ?? existingByEmail.name,
-          phone: phone ?? existingByEmail.phone,
-          room: room ?? existingByEmail.room,
-          role: role ?? existingByEmail.role,
-          emailVerified: user.email_confirmed_at
-            ? new Date(user.email_confirmed_at)
-            : existingByEmail.emailVerified,
-        },
-      });
-      console.log("User updated by email in database:", normalizedEmail);
-    } else {
-      console.info("[user/sync] Entering create-user path");
-      await prisma.user.create({
-        data: {
-          id: user.id,
-          email: normalizedEmail,
-          name: name ?? null,
-          phone: phone ?? null,
-          room: room ?? null,
-          role: role ?? "user",
-          emailVerified: user.email_confirmed_at
-            ? new Date(user.email_confirmed_at)
-            : null,
-        },
-      });
-      console.log("User created in database:", normalizedEmail);
-    }
+    const dbUser = await syncAppUserFromSupabaseUser(user);
     console.info("[user/sync] Sync completed successfully", {
-      userId: user.id,
+      userId: dbUser.id,
       email: normalizedEmail,
     });
 
-    return NextResponse.json({ message: "User synced successfully" });
-
+    return NextResponse.json({ message: "User synced successfully", user: dbUser });
   } catch (error) {
     console.error("Sync error:", error);
 
@@ -140,9 +60,6 @@ export async function POST() {
       );
     }
 
-    return NextResponse.json(
-      { error: "Failed to sync user" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to sync user" }, { status: 500 });
   }
 }
