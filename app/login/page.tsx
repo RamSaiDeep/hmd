@@ -47,7 +47,7 @@ function LoginContent() {
     }
 
     // ✅ Sync user to Prisma
-    await fetch("/api/auth/sync-user", { method: "POST" });
+    await fetch("/api/auth/sync-user", { method: "POST", credentials: "include" });
 
     router.push("/dashboard");
     router.refresh();
@@ -98,7 +98,7 @@ function LoginContent() {
 
       // ⏳ Delay ensures session is available
       setTimeout(async () => {
-        await fetch("/api/auth/sync-user", { method: "POST" });
+        await fetch("/api/auth/sync-user", { method: "POST", credentials: "include" });
       }, 1000);
     }
 

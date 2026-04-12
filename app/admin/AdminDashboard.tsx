@@ -93,19 +93,33 @@ export default function AdminDashboard({
 
   async function deleteUser(id: string) {
     setDeletingUserId(id);
-    await fetch("/api/admin/users/delete", {
+    const res = await fetch("/api/admin/users/delete", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as null | { error?: string };
+      alert(data?.error || "Failed to delete user");
+      setDeletingUserId(null);
+      return;
+    }
     window.location.reload();
   }
 
   async function updateUserRole(id: string, role: "user" | "member") {
     setUpdatingRoleUserId(id);
-    await fetch("/api/admin/users/role", {
+    const res = await fetch("/api/admin/users/role", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, role }),
     });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as null | { error?: string };
+      alert(data?.error || "Failed to update role");
+      setUpdatingRoleUserId(null);
+      return;
+    }
     window.location.reload();
   }
 

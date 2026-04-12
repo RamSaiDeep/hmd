@@ -82,6 +82,7 @@ export default function RegisterComplaint() {
     try {
       const res = await fetch("/api/complaints", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           place,

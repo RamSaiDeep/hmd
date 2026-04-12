@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { resolveAppRole } from "@/lib/user-role";
 
 export async function GET() {
   try {
@@ -20,7 +21,7 @@ export async function GET() {
 
     return NextResponse.json({
       id: user.id,
-      role: dbUser?.role ?? "user",
+      role: resolveAppRole(dbUser?.role, user),
     });
   } catch (error) {
     console.error("GET /api/user/me error:", error);

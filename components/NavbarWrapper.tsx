@@ -10,17 +10,16 @@ import { AudioLines, Mic, Speaker, Wrench } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { resolveAppRole, type AppRole } from "@/lib/user-role";
 
 type NavLink = {
   href: string;
   label: string;
 };
 
-type UserRole = "user" | "member" | "admin";
-
 export default function NavbarWrapper() {
   const [user, setUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<UserRole>("user");
+  const [userRole, setUserRole] = useState<AppRole>("user");
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
@@ -30,16 +29,26 @@ export default function NavbarWrapper() {
   useEffect(() => {
     async function fetchRole() {
       try {
-        const response = await fetch("/api/user/me", { cache: "no-store" });
+        const response = await fetch("/api/user/me", {
+          cache: "no-store",
+          credentials: "include",
+        });
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+
         if (!response.ok) {
-          setUserRole("user");
+          setUserRole(resolveAppRole(undefined, authUser));
           return;
         }
 
         const data = (await response.json()) as { role?: string };
-        setUserRole(data.role === "admin" || data.role === "member" ? data.role : "user");
+        setUserRole(resolveAppRole(data.role, authUser));
       } catch {
-        setUserRole("user");
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+        setUserRole(resolveAppRole(undefined, authUser));
       }
     }
 
