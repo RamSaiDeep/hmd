@@ -1,5 +1,5 @@
 import { findAppUserForSupabaseUser } from "@/lib/app-user";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import MemberDashboard from "./MemberDashboard";
@@ -11,6 +11,7 @@ export default async function MemberPage({
 }: {
   searchParams: Promise<{ view?: string | string[] }>;
 }) {
+  const prisma = getPrismaClient();
   const supabase = await createClient();
 
   const {

@@ -2,12 +2,13 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { findAppUserForSupabaseUser, syncAppUserFromSupabaseUser } from "@/lib/app-user";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
+    const prisma = getPrismaClient();
     const supabase = await createClient();
 
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -43,6 +44,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const prisma = getPrismaClient();
     const supabase = await createClient();
     const {
       data: { user },

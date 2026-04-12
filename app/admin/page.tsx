@@ -1,10 +1,11 @@
 import { findAppUserForSupabaseUser } from "@/lib/app-user";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AdminDashboard from "./AdminDashboard";
 
 export default async function AdminPage() {
+  const prisma = getPrismaClient();
   const supabase = await createClient();
 
   const {

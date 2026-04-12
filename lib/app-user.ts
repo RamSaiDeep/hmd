@@ -3,7 +3,7 @@ import "server-only";
 import type { User as PrismaUser } from "@prisma/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { normalizeAppRole } from "@/lib/user-role";
 
 function readMetadataString(value: unknown): string | null {
@@ -32,6 +32,7 @@ function buildUserSyncData(user: SupabaseUser, normalizedEmail: string, existing
 }
 
 export async function findAppUserForSupabaseUser(user: SupabaseUser) {
+  const prisma = getPrismaClient();
   const normalizedEmail = getNormalizedUserEmail(user);
 
   if (normalizedEmail) {
@@ -50,6 +51,7 @@ export async function findAppUserForSupabaseUser(user: SupabaseUser) {
 }
 
 export async function syncAppUserFromSupabaseUser(user: SupabaseUser) {
+  const prisma = getPrismaClient();
   const normalizedEmail = getNormalizedUserEmail(user);
 
   if (!normalizedEmail) {
