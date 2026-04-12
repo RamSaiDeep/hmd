@@ -11,7 +11,14 @@ function createPrismaClient(): PrismaClient {
   const accelerateUrl = process.env.PRISMA_ACCELERATE_URL;
   const databaseUrl = process.env.DATABASE_URL;
 
-  // ✅ Option 1: Accelerate (if provided)
+  console.info("[prisma] DATABASE_URL exists:", !!databaseUrl);
+  console.info("[prisma] PRISMA_ACCELERATE_URL exists:", !!accelerateUrl);
+  
+  if (databaseUrl) {
+    console.info("[prisma] DATABASE_URL (masked):", databaseUrl.replace(/\/\/[^@]+@/, '//***:***@'));
+  }
+
+  // Option 1: Accelerate (if provided)
   if (accelerateUrl) {
     console.info("[prisma] Using PRISMA_ACCELERATE_URL");
     return new PrismaClient({
