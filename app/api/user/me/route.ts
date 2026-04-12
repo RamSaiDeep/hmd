@@ -1,9 +1,11 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { findAppUserForSupabaseUser } from "@/lib/app-user";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAppRole } from "@/lib/user-role";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {

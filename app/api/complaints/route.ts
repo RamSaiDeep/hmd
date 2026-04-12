@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { findAppUserForSupabaseUser, syncAppUserFromSupabaseUser } from "@/lib/app-user";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
