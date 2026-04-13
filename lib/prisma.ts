@@ -24,13 +24,11 @@ function createPrismaClient(): PrismaClient {
   if (databaseUrl) {
     console.info("[prisma] Using PostgreSQL adapter");
 
-    // Add SSL parameters to DATABASE_URL for Vercel deployment
-    const modifiedDatabaseUrl = databaseUrl.includes('sslmode=')
-      ? databaseUrl
-      : `${databaseUrl}?sslmode=require&sslrejectunauthorized=false`;
-
     const adapter = new PrismaPg({
-      connectionString: modifiedDatabaseUrl,
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     });
 
     return new PrismaClient({
