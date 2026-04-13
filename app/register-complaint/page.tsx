@@ -123,11 +123,11 @@ export default function RegisterComplaint() {
     <div className="min-h-screen">
 
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="rounded-2xl p-8 border border-white/10">
+        <div className="rounded-2xl p-8 border bg-card">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-white mb-1">Register a Complaint</h1>
-              <p className="text-gray-300 text-sm">Fill in the details and our team will get back to you.</p>
+              <h1 className="text-2xl font-bold text-foreground mb-1">Register a Complaint</h1>
+              <p className="text-muted-foreground text-sm">Fill in the details and our team will get back to you.</p>
             </div>
             <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
               Return Home
@@ -143,8 +143,8 @@ export default function RegisterComplaint() {
           {submitted ? (
             <div className="text-center py-12">
               <div className="text-5xl mb-4">✅</div>
-              <h2 className="text-xl font-bold text-white mb-2">Complaint Registered!</h2>
-              <p className="text-gray-300 text-sm mb-6">Our team will look into it shortly.</p>
+              <h2 className="text-xl font-bold text-foreground mb-2">Complaint Registered!</h2>
+              <p className="text-muted-foreground text-sm mb-6">Our team will look into it shortly.</p>
               <Button onClick={handleReset}>Register Another</Button>
             </div>
           ) : (
@@ -152,9 +152,9 @@ export default function RegisterComplaint() {
 
               {/* Room / Place - pre-filled from user profile */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300" htmlFor="place">
+                <label className="text-sm text-muted-foreground" htmlFor="place">
                   Room Number / Place
-                  <span className="text-gray-500 ml-1">(pre-filled from your profile, change if needed)</span>
+                  <span className="text-muted-foreground/70 ml-1">(pre-filled from your profile, change if needed)</span>
                 </label>
                 <input
                   id="place"
@@ -162,18 +162,18 @@ export default function RegisterComplaint() {
                   value={place}
                   onChange={(e) => setPlace(e.target.value)}
                   placeholder="e.g. A-204, Common Room, Corridor B"
-                  className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition"
+                  className="rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary border bg-background transition"
                 />
               </div>
 
               {/* Issue type */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300" htmlFor="issueType">Issue Type</label>
+                <label className="text-sm text-muted-foreground" htmlFor="issueType">Issue Type</label>
                 <select
                   id="issueType"
                   value={issueType}
                   onChange={(e) => setIssueType(e.target.value)}
-                  className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition"
+                  className="rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary border bg-background transition"
                 >
                   <option value="">Select an issue type</option>
                   {issueTypes.map((type) => (
@@ -185,22 +185,22 @@ export default function RegisterComplaint() {
               {/* Extra description only if Other */}
               {issueType === "Other" && (
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm text-gray-300" htmlFor="issueDescription">Describe the Issue</label>
+                  <label className="text-sm text-muted-foreground" htmlFor="issueDescription">Describe the Issue</label>
                   <textarea
                     id="issueDescription"
                     rows={3}
-                    placeholder="Describe what the issue is..."
+                    placeholder="Describe what issue is..."
                     value={issueDetail}
                     onChange={(e) => setIssueDetail(e.target.value)}
-                    className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition resize-none"
+                    className="rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary border bg-background transition resize-none"
                   />
                 </div>
               )}
 
               {/* Additional details */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-300" htmlFor="additionalDetails">
-                  Additional Details <span className="text-gray-500 ml-1">(optional)</span>
+                <label className="text-sm text-muted-foreground" htmlFor="additionalDetails">
+                  Additional Details <span className="text-muted-foreground/70 ml-1">(optional)</span>
                 </label>
                 <textarea
                   id="additionalDetails"
@@ -208,18 +208,18 @@ export default function RegisterComplaint() {
                   placeholder="Any extra information that might help..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 border border-white/10 transition resize-none"
+                  className="rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary border bg-background transition resize-none"
                 />
               </div>
 
               {/* Photo upload */}
               <div className="flex flex-col gap-2">
-                <label className="text-sm text-gray-300">
+                <label className="text-sm text-muted-foreground">
                   Photo
-                  <span className="text-gray-500 ml-1">(optional)</span>
+                  <span className="text-muted-foreground/70 ml-1">(optional)</span>
                 </label>
                 <label
-                  className="flex flex-col items-center justify-center border border-dashed border-white/20 rounded-xl py-8 cursor-pointer hover:border-blue-500/50 transition"
+                  className="flex flex-col items-center justify-center border border-dashed border-border rounded-xl py-8 cursor-pointer hover:border-primary transition"
                 >
                   <input
                     type="file"
@@ -239,17 +239,17 @@ export default function RegisterComplaint() {
                   ) : (
                     <>
                       <span className="text-3xl mb-2">📷</span>
-                      <span className="text-gray-300 text-sm">Click to upload a photo</span>
-                      <span className="text-gray-500 text-xs mt-1">JPG, PNG, WEBP supported</span>
+                      <span className="text-muted-foreground text-sm">Click to upload a photo</span>
+                      <span className="text-muted-foreground/70 text-xs mt-1">JPG, PNG, WEBP supported</span>
                     </>
                   )}
                 </label>
                 {photo && (
-                  <div className="flex items-center justify-between text-xs text-gray-300 px-1">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
                     <span>📎 {photo.name}</span>
                     <button
                       onClick={() => { setPhoto(null); setPhotoPreview(null); }}
-                      className="text-red-400 hover:text-red-300 transition"
+                      className="text-destructive hover:text-destructive/80 transition"
                     >
                       Remove
                     </button>

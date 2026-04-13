@@ -24,11 +24,11 @@ function LoginContent() {
   const urlError = searchParams.get("error");
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-white/25 bg-slate-900/70 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/30";
+    "mt-1 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
   const buttonClass =
     "w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-60";
   const googleClass =
-    "w-full rounded-xl border border-white/20 bg-slate-900/70 px-4 py-3 text-sm text-white hover:border-cyan-400/60";
+    "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground hover:border-primary/60";
 
   // 🔥 LOGIN
   async function handleLogin() {
@@ -120,7 +120,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-white/15 bg-slate-950/80 p-6 text-white shadow-xl">
+    <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border bg-card p-6 text-foreground shadow-xl">
       <h1 className="mb-4 text-2xl font-bold">
         {mode === "login" ? "Login" : "Sign Up"}
       </h1>

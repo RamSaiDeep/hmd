@@ -20,9 +20,20 @@ export default async function AdminPage() {
     return <h1>Access Denied 🚫</h1>;
   }
 
-  const [complaints, events, users] = await Promise.all([
+  const [complaints, events, musicRequests, users] = await Promise.all([
     prisma.complaint.findMany({ include: { user: true }, orderBy: { createdAt: "desc" } }),
     prisma.eventRequest.findMany({ orderBy: { createdAt: "desc" } }),
+    prisma.musicRequest.findMany({ 
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    }),
     prisma.user.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
 
@@ -48,6 +59,20 @@ export default async function AdminPage() {
         departments: e.departments,
         status: e.status,
         memberResponse: e.memberResponse,
+      }))}
+      musicRequests={musicRequests.map((m) => ({
+        id: m.id,
+        eventName: m.eventName,
+        organizer: m.organizer,
+        eventDate: m.eventDate,
+        eventTime: m.eventTime,
+        venue: m.venue,
+        soundItems: m.soundItems as any,
+        needsLight: m.needsLight,
+        lighting: m.lighting,
+        notes: m.notes,
+        status: m.status,
+        createdAt: m.createdAt.toISOString(),
       }))}
       users={users.map((u) => ({
         id: u.id,

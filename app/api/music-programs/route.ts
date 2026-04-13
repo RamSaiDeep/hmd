@@ -39,27 +39,36 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Ensure user exists in database using the sync API
+    // Ensure user exists in database (inline sync logic)
     console.log("Music Programs API - Ensuring user sync for:", user.email);
     
-    const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/user/ensure-sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    // Check if user exists in database
+    const existingUser = await prisma.user.findUnique({
+      where: { email: user.email! }
     });
 
-    if (!syncResponse.ok) {
-      const syncError = await syncResponse.json().catch(() => ({}));
-      console.error("Music Programs API - User sync failed:", syncError);
-      return NextResponse.json({ 
-        error: "User sync failed: " + (syncError.error || "Unknown sync error") 
-      }, { status: 500 });
+    if (!existingUser) {
+      console.log("Music Programs API - Creating new user in database");
+      // Create new user
+      const newUser = await prisma.user.create({
+        data: {
+          id: user.id,
+          email: user.email!,
+          name: user.user_metadata?.name || user.email?.split('@')[0] || null,
+          phone: user.user_metadata?.phone || null,
+          room: user.user_metadata?.room || null,
+          role: user.user_metadata?.role || "user",
+          emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
+        },
+      });
+      console.log("Music Programs API - User created successfully:", newUser.email);
+    } else {
+      console.log("Music Programs API - User already exists");
     }
-
-    const syncResult = await syncResponse.json();
-    console.log("Music Programs API - User sync successful:", syncResult.message);
 
     const musicRequest = await prisma.musicRequest.create({
       data: {
+        userId: user.id,
         eventName: body.eventName.trim(),
         organizer: body.organizer.trim(),
         eventDate: body.eventDate.trim(),

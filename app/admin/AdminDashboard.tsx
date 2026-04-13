@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
-type AdminView = "complaints" | "events" | "users";
+type AdminView = "complaints" | "events" | "music" | "users";
 type ComplaintScope = "all" | "mine";
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -38,6 +38,25 @@ type EventItem = {
   memberResponse?: string | null;
 };
 
+type MusicRequestItem = {
+  id: string;
+  eventName: string;
+  organizer: string;
+  eventDate: string;
+  eventTime?: string | null;
+  venue: string;
+  soundItems: any;
+  needsLight: boolean;
+  lighting: string[];
+  notes?: string | null;
+  status: string;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+  } | null;
+  createdAt: string;
+};
+
 type UserItem = {
   id: string;
   name?: string | null;
@@ -53,11 +72,13 @@ const priorityOptions = ["ALL", "Low", "Medium", "High"];
 export default function AdminDashboard({
   complaints,
   events,
+  musicRequests,
   users,
   currentUser,
 }: {
   complaints: ComplaintItem[];
   events: EventItem[];
+  musicRequests: MusicRequestItem[];
   users: UserItem[];
   currentUser: { id: string };
 }) {
@@ -69,6 +90,20 @@ export default function AdminDashboard({
   const [deletingComplaintId, setDeletingComplaintId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
+  const [deletingMusicId, setDeletingMusicId] = useState<string | null>(null);
+  const [updatingMusicId, setUpdatingMusicId] = useState<string | null>(null);
+  const [showMusicModal, setShowMusicModal] = useState(false);
+  const [selectedMusic, setSelectedMusic] = useState<MusicRequestItem | null>(null);
+  const [musicAction, setMusicAction] = useState<'accept' | 'reject' | 'alternative'>('accept');
+  const [adminResponse, setAdminResponse] = useState('');
+  const [alternatives, setAlternatives] = useState({
+    date: '',
+    time: '',
+    venue: '',
+    soundItems: '',
+    lighting: [] as string[],
+    notes: ''
+  });
 
   async function updateComplaint(id: string, field: "status" | "priority", value: string) {
     await fetch("/api/complaints/update", {
@@ -109,6 +144,78 @@ export default function AdminDashboard({
     window.location.reload();
   }
 
+  async function deleteMusicRequest(id: string) {
+    setDeletingMusicId(id);
+    await fetch("/api/admin/music-requests", {
+      method: "DELETE",
+      body: JSON.stringify({ id }),
+    });
+    window.location.reload();
+  }
+
+  async function updateMusicRequest(id: string, status: string, response?: string, alt?: any) {
+    setUpdatingMusicId(id);
+    await fetch("/api/admin/music-requests", {
+      method: "PUT",
+      body: JSON.stringify({ 
+        id, 
+        status, 
+        adminResponse: response,
+        alternatives: alt 
+      }),
+    });
+    window.location.reload();
+  }
+
+  function openMusicModal(music: MusicRequestItem, action: 'accept' | 'reject') {
+    setSelectedMusic(music);
+    setMusicAction(action);
+    setAdminResponse('');
+    setShowMusicModal(true);
+  }
+
+  function closeMusicModal() {
+    setShowMusicModal(false);
+    setSelectedMusic(null);
+    setAdminResponse('');
+    setAlternatives({
+      date: '',
+      time: '',
+      venue: '',
+      soundItems: '',
+      lighting: [],
+      notes: ''
+    });
+  }
+
+  function getUserName(music: MusicRequestItem) {
+    // If music request has user information, use it
+    if (music.user) {
+      return music.user.name || music.user.email || 'Unknown User';
+    }
+    // Fallback to searching users by organizer email
+    const user = users.find(u => u.email === music.organizer);
+    return user?.name || music.organizer || 'Unknown User';
+  }
+
+  function handleMusicSubmit() {
+    if (!selectedMusic) return;
+
+    let status = 'Pending';
+    let response = adminResponse;
+
+    if (musicAction === 'accept') {
+      status = 'Accepted';
+      response = 'Your music request has been accepted! We will provide the requested sound and lighting support.';
+    } else if (musicAction === 'reject') {
+      status = 'Rejected';
+      response = adminResponse || 'Unfortunately, we cannot accommodate your request at this time.';
+    }
+
+    updateMusicRequest(selectedMusic.id, status, response);
+    closeMusicModal();
+  }
+
   const scopedComplaints = useMemo(
     () => (scope === "mine" ? complaints.filter((c) => c.userId === currentUser.id) : complaints),
     [scope, complaints, currentUser.id]
@@ -140,6 +247,7 @@ export default function AdminDashboard({
         {[
           { key: "complaints", label: `Complaints (${complaints.length})` },
           { key: "events", label: `Events (${events.length})` },
+          { key: "music", label: `Music Events (${musicRequests.length})` },
           { key: "users", label: `Users (${users.length})` },
         ].map((tab) => (
           <button
@@ -323,6 +431,108 @@ export default function AdminDashboard({
         </section>
       )}
 
+      {view === "music" && (
+        <section className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-card-foreground">Music Event Requests ({musicRequests.length})</h2>
+          <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-left">
+                <tr>
+                  <th className="px-3 py-2">Event</th>
+                  <th className="px-3 py-2">User</th>
+                  <th className="px-3 py-2">Organizer</th>
+                  <th className="px-3 py-2">Date</th>
+                  <th className="px-3 py-2">Time</th>
+                  <th className="px-3 py-2">Venue</th>
+                  <th className="px-3 py-2">Sound Items</th>
+                  <th className="px-3 py-2">Lighting</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {musicRequests.map((music) => (
+                  <tr key={music.id} className="border-t border-border">
+                    <td className="px-3 py-2 font-medium">{music.eventName}</td>
+                    <td className="px-3 py-2">{getUserName(music)}</td>
+                    <td className="px-3 py-2">{music.organizer}</td>
+                    <td className="px-3 py-2">{music.eventDate}</td>
+                    <td className="px-3 py-2">{music.eventTime || "Not specified"}</td>
+                    <td className="px-3 py-2">{music.venue}</td>
+                    <td className="px-3 py-2">
+                      <div className="max-w-xs">
+                        {Array.isArray(music.soundItems) && music.soundItems.length > 0 ? (
+                          <ul className="text-xs">
+                            {(music.soundItems as any[]).map((item: any, index: number) => (
+                              <li key={index}>
+                                {item.item} ({item.quantity})
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">No sound items</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div>
+                        {music.needsLight ? (
+                          <div>
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Yes</span>
+                            {music.lighting.length > 0 && (
+                              <div className="text-xs mt-1">
+                                {music.lighting.join(", ")}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">No</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        music.status === 'Accepted' ? 'bg-green-100 text-green-800' :
+                        music.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                        music.status === 'Alternative Offered' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {music.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => openMusicModal(music, 'accept')}
+                          disabled={updatingMusicId === music.id}
+                          className="rounded-md border border-green-600 px-2 py-1 text-xs text-green-600 hover:bg-green-50 disabled:opacity-60"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => openMusicModal(music, 'reject')}
+                          disabled={updatingMusicId === music.id}
+                          className="rounded-md border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => deleteMusicRequest(music.id)}
+                          disabled={deletingMusicId === music.id}
+                          className="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                        >
+                          {deletingMusicId === music.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {view === "users" && (
         <section className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-card-foreground">Users ({users.length})</h2>
@@ -381,6 +591,151 @@ export default function AdminDashboard({
             </table>
           </div>
         </section>
+      )}
+
+      {/* Music Request Management Modal */}
+      {showMusicModal && selectedMusic && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-card rounded-xl border border-border max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
+              {musicAction === 'accept' ? 'Accept Request' : 
+               musicAction === 'reject' ? 'Reject Request' : 
+               'Offer Alternative'}
+            </h3>
+            
+            <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+              <h4 className="font-medium text-foreground mb-2">Original Request:</h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p><strong>Event:</strong> {selectedMusic.eventName}</p>
+                <p><strong>Organizer:</strong> {selectedMusic.organizer}</p>
+                <p><strong>Date:</strong> {selectedMusic.eventDate}</p>
+                <p><strong>Time:</strong> {selectedMusic.eventTime || 'Not specified'}</p>
+                <p><strong>Venue:</strong> {selectedMusic.venue}</p>
+                <p><strong>Lighting:</strong> {selectedMusic.needsLight ? 'Yes' : 'No'}</p>
+              </div>
+            </div>
+
+            {musicAction === 'alternative' && (
+              <div className="space-y-4 mb-4">
+                <h4 className="font-medium text-foreground">Alternative Arrangement:</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Date</label>
+                  <input
+                    type="date"
+                    value={alternatives.date}
+                    onChange={(e) => setAlternatives({...alternatives, date: e.target.value})}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    title="Alternative Date"
+                    placeholder="Select alternative date"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Time</label>
+                  <input
+                    type="time"
+                    value={alternatives.time}
+                    onChange={(e) => setAlternatives({...alternatives, time: e.target.value})}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    title="Alternative Time"
+                    placeholder="Select alternative time"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Venue</label>
+                  <input
+                    type="text"
+                    value={alternatives.venue}
+                    onChange={(e) => setAlternatives({...alternatives, venue: e.target.value})}
+                    placeholder="e.g. Different auditorium, Studio room"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Sound Items</label>
+                  <textarea
+                    value={alternatives.soundItems}
+                    onChange={(e) => setAlternatives({...alternatives, soundItems: e.target.value})}
+                    placeholder="Item 1 (quantity)&#10;Item 2 (quantity)&#10;..."
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Lighting</label>
+                  <div className="space-y-2">
+                    {['white', 'warm-white', 'colored', 'spotlights', 'flood'].map((light) => (
+                      <label key={light} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={alternatives.lighting.includes(light)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setAlternatives({...alternatives, lighting: [...alternatives.lighting, light]});
+                            } else {
+                              setAlternatives({...alternatives, lighting: alternatives.lighting.filter(l => l !== light)});
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{light}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Notes</label>
+                  <textarea
+                    value={alternatives.notes}
+                    onChange={(e) => setAlternatives({...alternatives, notes: e.target.value})}
+                    placeholder="Additional information about the alternative arrangement"
+                    rows={2}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-1">Response Message</label>
+              <textarea
+                value={adminResponse}
+                onChange={(e) => setAdminResponse(e.target.value)}
+                placeholder={
+                  musicAction === 'accept' ? 'Your music request has been accepted! We will provide the requested sound and lighting support.' :
+                  musicAction === 'reject' ? 'Unfortunately, we cannot accommodate your request at this time.' :
+                  'We can offer an alternative arrangement as detailed below.'
+                }
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={closeMusicModal}
+                className="px-4 py-2 text-sm border border-border rounded-md hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMusicSubmit}
+                disabled={updatingMusicId === selectedMusic.id}
+                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-60"
+              >
+                {updatingMusicId === selectedMusic.id ? 'Processing...' : 
+                 musicAction === 'accept' ? 'Accept' : 
+                 musicAction === 'reject' ? 'Reject' : 
+                 'Offer Alternative'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

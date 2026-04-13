@@ -29,6 +29,9 @@ model User {
   sessions      Session[]
   complaints    Complaint[]
   bookings      StudioBooking[]
+  musicRequests MusicRequest[]
+
+  @@index([email])
 }
 
 //////////////////////////////////////////////////////
@@ -121,19 +124,32 @@ model EventRequest {
 //////////////////////////////////////////////////////
 
 model MusicRequest {
-  id         String   @id @default(uuid())
-  eventName  String
-  organizer  String
-  eventDate  String
-  eventTime  String?
-  venue      String
-  soundItems Json
-  needsLight Boolean  @default(false)
-  lighting   String[]
-  notes      String?
-  status     String   @default("Pending")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String?
+  eventName     String
+  organizer     String
+  eventDate     String
+  eventTime     String?
+  venue         String
+  soundItems    Json
+  needsLight    Boolean  @default(false)
+  lighting      String[]
+  notes         String?
+  status        String   @default("Pending")
+  // Admin response fields
+  adminResponse String?
+  alternativeDate    String?
+  alternativeTime    String?
+  alternativeVenue    String?
+  alternativeSoundItems Json?
+  alternativeLighting String[]
+  alternativeNotes    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 //////////////////////////////////////////////////////

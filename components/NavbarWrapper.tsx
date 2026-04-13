@@ -101,12 +101,14 @@ export default function NavbarWrapper() {
   const navLinks: NavLink[] =
     userRole === "admin"
       ? [
+          { href: "/dashboard", label: "My Dashboard" },
           { href: "/member?view=all", label: "All Complaints" },
           { href: "/member?view=mine", label: "My Complaints" },
           { href: "/admin", label: "Admin" },
         ]
       : userRole === "member"
       ? [
+          { href: "/dashboard", label: "My Dashboard" },
           { href: "/member?view=all", label: "All Complaints" },
           { href: "/member?view=mine", label: "My Complaints" },
         ]
