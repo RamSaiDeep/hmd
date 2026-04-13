@@ -24,62 +24,98 @@ export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  useEffect(() => {
-    async function loadDashboard() {
+  async function loadDashboard() {
+    try {
+      // Get current user
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      console.log("Dashboard - user:", user?.email ?? "not logged in");
+
+      // Redirect to login if not logged in
+      if (!user || error) {
+        router.push("/login");
+        return;
+      }
+
+      setUser(user);
+
+      // Fetch user role
       try {
-        // Get current user
-        const { data: { user }, error } = await supabase.auth.getUser();
-
-        console.log("Dashboard — user:", user?.email ?? "not logged in");
-
-        // Redirect to login if not logged in
-        if (!user || error) {
-          router.push("/login");
-          return;
+        const roleResponse = await fetch("/api/user/me", { cache: "no-store" });
+        if (roleResponse.ok) {
+          const roleData = await roleResponse.json();
+          setUserRole(roleData.role === "admin" || roleData.role === "member" ? roleData.role : "user");
         }
+      } catch (roleError) {
+        console.error("Role fetch error:", roleError);
+        setUserRole("user");
+      }
 
-        setUser(user);
-
-        // Fetch user role
-        try {
-          const roleResponse = await fetch("/api/user/me", { cache: "no-store" });
-          if (roleResponse.ok) {
-            const roleData = await roleResponse.json();
-            setUserRole(roleData.role === "admin" || roleData.role === "member" ? roleData.role : "user");
-          }
-        } catch (roleError) {
-          console.error("Role fetch error:", roleError);
-          setUserRole("user");
+      // Fetch complaints and music requests
+      try {
+        const [complaintsResponse, musicResponse] = await Promise.all([
+          fetch("/api/complaints"),
+          fetch("/api/user/music-requests")
+        ]);
+        
+        if (complaintsResponse.ok) {
+          const complaintsData = await complaintsResponse.json();
+          setComplaints(complaintsData.complaints || []);
         }
+        
+        if (musicResponse.ok) {
+          const musicData = await musicResponse.json();
+          setMusicRequests(musicData.musicRequests || []);
+        }
+      } catch (dbError) {
+        console.error("Database error:", dbError);
+      }
+    } catch (error) {
+      console.error("Dashboard error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-        // Fetch complaints and music requests
-        try {
-          const [complaintsResponse, musicResponse] = await Promise.all([
-            fetch("/api/complaints"),
-            fetch("/api/user/music-requests")
-          ]);
-          
-          if (complaintsResponse.ok) {
-            const complaintsData = await complaintsResponse.json();
-            setComplaints(complaintsData.complaints || []);
-          }
-          
-          if (musicResponse.ok) {
-            const musicData = await musicResponse.json();
-            setMusicRequests(musicData.musicRequests || []);
-          }
-        } catch (dbError) {
-          console.error("Database error:", dbError);
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const [complaintsResponse, musicResponse] = await Promise.all([
+          fetch("/api/complaints"),
+          fetch("/api/user/music-requests")
+        ]);
+        
+        if (complaintsResponse.ok) {
+          const complaintsData = await complaintsResponse.json();
+          setComplaints(complaintsData.complaints || []);
+        }
+        
+        if (musicResponse.ok) {
+          const musicData = await musicResponse.json();
+          setMusicRequests(musicData.musicRequests || []);
         }
       } catch (error) {
-        console.error("Dashboard error:", error);
-      } finally {
-        setLoading(false);
+        console.error("Auto-refresh error:", error);
       }
-    }
+    }, 30000); // 30 seconds
 
-    loadDashboard();
-  }, [supabase, router]);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Refresh when window gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      loadDashboard();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
 
   if (loading) {
     return <div className="mx-auto w-full max-w-5xl px-4 py-8">Loading...</div>;
@@ -151,7 +187,7 @@ export default function DashboardPage() {
                     <TableCell>{c.place}</TableCell>
                     <TableCell>
                       {c.issueType}
-                      {c.issueDetail ? ` — ${c.issueDetail}` : ""}
+                      {c.issueDetail ? ` - ${c.issueDetail}` : ""}
                     </TableCell>
                     <TableCell>{c.status}</TableCell>
                     <TableCell>{c.priority}</TableCell>
@@ -181,7 +217,7 @@ export default function DashboardPage() {
                   <div>
                     <h3 className="font-semibold text-foreground">{request.eventName}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {request.eventDate} {request.eventTime && `at ${request.eventTime}`} • {request.venue}
+                      {request.eventDate} {request.eventTime && `at ${request.eventTime}`} - {request.venue}
                     </p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded ${

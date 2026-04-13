@@ -61,8 +61,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const musicRequest = await prisma.musicRequest.create({
-      data: {
+    const requestData: any = {
         eventName: body.eventName.trim(),
         organizer: body.organizer.trim(),
         eventDate: body.eventDate.trim(),
@@ -72,7 +71,15 @@ export async function POST(req: Request) {
         needsLight: body.needsLight || false,
         lighting: body.needsLight ? (body.lighting || []) : [],
         notes: body.notes?.trim() || null,
-      },
+      };
+
+    // Only include userId if we have a valid user
+    if (dbUser?.id) {
+      requestData.userId = dbUser.id;
+    }
+
+    const musicRequest = await prisma.musicRequest.create({
+      data: requestData,
     });
 
     console.log("Music Programs API - Music request created successfully:", musicRequest.id);
