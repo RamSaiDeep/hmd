@@ -20,27 +20,23 @@ function createPrismaClient(): PrismaClient {
     });
   }
 
-  // Option 2: Direct Prisma client with SSL configuration
+  // Option 2: PostgreSQL adapter with SSL configuration
   if (databaseUrl) {
-    console.info("[prisma] Using direct Prisma client");
+    console.info("[prisma] Using PostgreSQL adapter");
 
     // Add SSL parameters to DATABASE_URL for Vercel deployment
     const modifiedDatabaseUrl = databaseUrl.includes('sslmode=')
       ? databaseUrl
       : `${databaseUrl}?sslmode=require&sslrejectunauthorized=false`;
 
-    // Temporarily set the modified URL in environment
-    const originalUrl = process.env.DATABASE_URL;
-    process.env.DATABASE_URL = modifiedDatabaseUrl;
-
-    const client = new PrismaClient({
-      log: ["query", "info", "warn", "error"],
+    const adapter = new PrismaPg({
+      connectionString: modifiedDatabaseUrl,
     });
 
-    // Restore original URL
-    process.env.DATABASE_URL = originalUrl;
-
-    return client;
+    return new PrismaClient({
+      adapter,
+      log: ["query", "info", "warn", "error"],
+    });
   }
 
   // Nothing configured
