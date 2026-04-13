@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import AdminDashboard from "./AdminDashboard";
 
 export default async function AdminPage() {
-  const prisma = getPrismaClient();
   const supabase = await createClient();
 
   const {
@@ -19,6 +18,8 @@ export default async function AdminPage() {
   if (!dbUser || dbUser.role !== "admin") {
     return <h1>Access Denied 🚫</h1>;
   }
+
+  const prisma = getPrismaClient();
 
   const [complaints, events, users] = await Promise.all([
     prisma.complaint.findMany({ include: { user: true }, orderBy: { createdAt: "desc" } }),

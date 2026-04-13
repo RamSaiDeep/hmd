@@ -11,7 +11,6 @@ export default async function MemberPage({
 }: {
   searchParams: Promise<{ view?: string | string[] }>;
 }) {
-  const prisma = getPrismaClient();
   const supabase = await createClient();
 
   const {
@@ -25,6 +24,8 @@ export default async function MemberPage({
   if (!dbUser || (dbUser.role !== "member" && dbUser.role !== "admin")) {
     return <h1>Access Denied 🚫</h1>;
   }
+
+  const prisma = getPrismaClient();
 
   const complaints = await prisma.complaint.findMany({
     include: { user: true },
