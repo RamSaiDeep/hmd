@@ -39,18 +39,15 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Ensure user exists in database (inline sync logic)
-    console.log("Music Programs API - Ensuring user sync for:", user.email);
-    
-    // Check if user exists in database
-    const existingUser = await prisma.user.findUnique({
-      where: { email: user.email! }
+    // Optimized: Check if user exists, only create if needed
+    let dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true }
     });
 
-    if (!existingUser) {
-      console.log("Music Programs API - Creating new user in database");
-      // Create new user
-      const newUser = await prisma.user.create({
+    if (!dbUser) {
+      // Create user only if doesn't exist
+      dbUser = await prisma.user.create({
         data: {
           id: user.id,
           email: user.email!,
@@ -60,15 +57,12 @@ export async function POST(req: Request) {
           role: user.user_metadata?.role || "user",
           emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
         },
+        select: { id: true }
       });
-      console.log("Music Programs API - User created successfully:", newUser.email);
-    } else {
-      console.log("Music Programs API - User already exists");
     }
 
     const musicRequest = await prisma.musicRequest.create({
       data: {
-        userId: user.id,
         eventName: body.eventName.trim(),
         organizer: body.organizer.trim(),
         eventDate: body.eventDate.trim(),

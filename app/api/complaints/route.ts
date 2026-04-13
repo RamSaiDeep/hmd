@@ -75,27 +75,27 @@ export async function POST(req: Request) {
 
     const normalizedEmail = user.email.trim().toLowerCase();
 
-    // Ensure user exists in Prisma (complaints should work for normal "user" role too)
-    const dbUser = await prisma.user.upsert({
+    // Optimized: Check if user exists, only create if needed
+    let dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      update: {
-        email: normalizedEmail,
-        name: user.user_metadata?.name ?? null,
-        phone: user.user_metadata?.phone ?? null,
-        room: user.user_metadata?.room ?? null,
-        role: user.user_metadata?.role ?? "user",
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-      },
-      create: {
-        id: user.id,
-        email: normalizedEmail,
-        name: user.user_metadata?.name ?? null,
-        phone: user.user_metadata?.phone ?? null,
-        room: user.user_metadata?.room ?? null,
-        role: user.user_metadata?.role ?? "user",
-        emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-      },
+      select: { id: true }
     });
+
+    if (!dbUser) {
+      // Create user only if doesn't exist
+      dbUser = await prisma.user.create({
+        data: {
+          id: user.id,
+          email: normalizedEmail,
+          name: user.user_metadata?.name ?? null,
+          phone: user.user_metadata?.phone ?? null,
+          room: user.user_metadata?.room ?? null,
+          role: user.user_metadata?.role ?? "user",
+          emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
+        },
+        select: { id: true }
+      });
+    }
 
     const complaint = await prisma.complaint.create({
       data: {

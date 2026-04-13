@@ -92,6 +92,11 @@ export default function AdminDashboard({
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const [deletingMusicId, setDeletingMusicId] = useState<string | null>(null);
   const [updatingMusicId, setUpdatingMusicId] = useState<string | null>(null);
+  
+  // Local state for optimistic updates
+  const [localComplaints, setLocalComplaints] = useState(complaints);
+  const [localMusicRequests, setLocalMusicRequests] = useState(musicRequests);
+  const [localUsers, setLocalUsers] = useState(users);
   const [showMusicModal, setShowMusicModal] = useState(false);
   const [selectedMusic, setSelectedMusic] = useState<MusicRequestItem | null>(null);
   const [musicAction, setMusicAction] = useState<'accept' | 'reject' | 'alternative'>('accept');
@@ -106,65 +111,127 @@ export default function AdminDashboard({
   });
 
   async function updateComplaint(id: string, field: "status" | "priority", value: string) {
-    await fetch("/api/complaints/update", {
-      method: "POST",
-      body: JSON.stringify({
-        id,
-        [field]: value,
-      }),
-    });
+    // Optimistic update
+    setLocalComplaints(prev => 
+      prev.map(c => c.id === id ? { ...c, [field]: value } : c)
+    );
 
-    window.location.reload();
+    try {
+      await fetch("/api/complaints/update", {
+        method: "POST",
+        body: JSON.stringify({
+          id,
+          [field]: value,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to update complaint:", error);
+      // Revert on error
+      setLocalComplaints(prev => 
+        prev.map(c => c.id === id ? { ...c, [field]: c[field] } : c)
+      );
+    }
   }
 
   async function deleteComplaint(id: string) {
     setDeletingComplaintId(id);
-    await fetch("/api/admin/complaints/delete", {
-      method: "POST",
-      body: JSON.stringify({ id }),
-    });
-    window.location.reload();
+    
+    // Optimistic update
+    setLocalComplaints(prev => prev.filter(c => c.id !== id));
+
+    try {
+      await fetch("/api/admin/complaints/delete", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      });
+    } catch (error) {
+      console.error("Failed to delete complaint:", error);
+      // Revert on error - would need to refetch from server
+      window.location.reload();
+    }
   }
 
   async function deleteUser(id: string) {
     setDeletingUserId(id);
-    await fetch("/api/admin/users/delete", {
-      method: "POST",
-      body: JSON.stringify({ id }),
-    });
-    window.location.reload();
+    
+    // Optimistic update
+    setLocalUsers(prev => prev.filter(u => u.id !== id));
+
+    try {
+      await fetch("/api/admin/users/delete", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      });
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      // Revert on error - would need to refetch from server
+      window.location.reload();
+    }
   }
 
   async function updateUserRole(id: string, role: "user" | "member") {
     setUpdatingRoleUserId(id);
-    await fetch("/api/admin/users/role", {
-      method: "POST",
-      body: JSON.stringify({ id, role }),
-    });
-    window.location.reload();
+    
+    // Optimistic update
+    setLocalUsers(prev => 
+      prev.map(u => u.id === id ? { ...u, role } : u)
+    );
+
+    try {
+      await fetch("/api/admin/users/role", {
+        method: "POST",
+        body: JSON.stringify({ id, role }),
+      });
+    } catch (error) {
+      console.error("Failed to update user role:", error);
+      // Revert on error
+      setLocalUsers(prev => 
+        prev.map(u => u.id === id ? { ...u, role: u.role === "member" ? "user" : "member" } : u)
+      );
+    }
   }
 
   async function deleteMusicRequest(id: string) {
     setDeletingMusicId(id);
-    await fetch("/api/admin/music-requests", {
-      method: "DELETE",
-      body: JSON.stringify({ id }),
-    });
-    window.location.reload();
+    
+    // Optimistic update
+    setLocalMusicRequests(prev => prev.filter(m => m.id !== id));
+
+    try {
+      await fetch("/api/admin/music-requests", {
+        method: "DELETE",
+        body: JSON.stringify({ id }),
+      });
+    } catch (error) {
+      console.error("Failed to delete music request:", error);
+      // Revert on error - would need to refetch from server
+      window.location.reload();
+    }
   }
 
   async function updateMusicRequest(id: string, status: string, response?: string, alt?: any) {
     setUpdatingMusicId(id);
-    await fetch("/api/admin/music-requests", {
-      method: "PUT",
-      body: JSON.stringify({ 
-        id, 
-        status, 
-        adminResponse: response,
-        alternatives: alt 
-      }),
-    });
-    window.location.reload();
+    
+    // Optimistic update
+    setLocalMusicRequests(prev => 
+      prev.map(m => m.id === id ? { ...m, status, adminResponse: response } : m)
+    );
+
+    try {
+      await fetch("/api/admin/music-requests", {
+        method: "PUT",
+        body: JSON.stringify({ 
+          id, 
+          status, 
+          adminResponse: response,
+          alternatives: alt 
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to update music request:", error);
+      // Revert on error - would need to refetch from server
+      window.location.reload();
+    }
   }
 
   function openMusicModal(music: MusicRequestItem, action: 'accept' | 'reject') {
@@ -217,8 +284,8 @@ export default function AdminDashboard({
   }
 
   const scopedComplaints = useMemo(
-    () => (scope === "mine" ? complaints.filter((c) => c.userId === currentUser.id) : complaints),
-    [scope, complaints, currentUser.id]
+    () => (scope === "mine" ? localComplaints.filter((c) => c.userId === currentUser.id) : localComplaints),
+    [scope, localComplaints, currentUser.id]
   );
 
   const filteredComplaints = useMemo(() => {
@@ -245,10 +312,10 @@ export default function AdminDashboard({
 
       <div className="mt-6 flex flex-wrap gap-2">
         {[
-          { key: "complaints", label: `Complaints (${complaints.length})` },
+          { key: "complaints", label: `Complaints (${localComplaints.length})` },
           { key: "events", label: `Events (${events.length})` },
-          { key: "music", label: `Music Events (${musicRequests.length})` },
-          { key: "users", label: `Users (${users.length})` },
+          { key: "music", label: `Music Events (${localMusicRequests.length})` },
+          { key: "users", label: `Users (${localUsers.length})` },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -451,7 +518,7 @@ export default function AdminDashboard({
                 </tr>
               </thead>
               <tbody>
-                {musicRequests.map((music) => (
+                {localMusicRequests.map((music) => (
                   <tr key={music.id} className="border-t border-border">
                     <td className="px-3 py-2 font-medium">{music.eventName}</td>
                     <td className="px-3 py-2">{getUserName(music)}</td>
@@ -550,7 +617,7 @@ export default function AdminDashboard({
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {localUsers.map((user) => (
                   <tr key={user.id} className="border-t border-border">
                     <td className="px-3 py-2">{user.name || "—"}</td>
                     <td className="px-3 py-2">{user.email}</td>

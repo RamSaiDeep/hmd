@@ -13,53 +13,31 @@ export async function POST() {
 
     console.log("User Sync - Syncing user:", user.email);
 
-    // Check if user exists in database
-    const existingUser = await prisma.user.findUnique({
-      where: { email: user.email! }
+    // Optimized: Use upsert for single operation
+    const userData = {
+      id: user.id,
+      email: user.email!,
+      name: user.user_metadata?.name || user.email?.split('@')[0] || null,
+      phone: user.user_metadata?.phone || null,
+      room: user.user_metadata?.room || null,
+      role: user.user_metadata?.role || "user",
+      emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
+    };
+
+    const syncedUser = await prisma.user.upsert({
+      where: { id: user.id },
+      update: userData,
+      create: userData,
     });
 
-    if (!existingUser) {
-      console.log("User Sync - Creating new user in database");
-      // Create new user
-      const newUser = await prisma.user.create({
-        data: {
-          id: user.id,
-          email: user.email!,
-          name: user.user_metadata?.name || user.email?.split('@')[0] || null,
-          phone: user.user_metadata?.phone || null,
-          room: user.user_metadata?.room || null,
-          role: user.user_metadata?.role || "user",
-          emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
-        },
-      });
-      
-      console.log("User Sync - User created successfully:", newUser.email);
-      return NextResponse.json({ 
-        message: "User created successfully", 
-        user: newUser,
-        isNewUser: true 
-      });
-    } else {
-      console.log("User Sync - User already exists, updating metadata");
-      // Update existing user with latest metadata
-      const updatedUser = await prisma.user.update({
-        where: { email: user.email! },
-        data: {
-          name: user.user_metadata?.name || existingUser.name,
-          phone: user.user_metadata?.phone || existingUser.phone,
-          room: user.user_metadata?.room || existingUser.room,
-          role: user.user_metadata?.role || existingUser.role,
-          emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : existingUser.emailVerified,
-        },
-      });
-      
-      console.log("User Sync - User updated successfully:", updatedUser.email);
-      return NextResponse.json({ 
-        message: "User updated successfully", 
-        user: updatedUser,
-        isNewUser: false 
-      });
-    }
+    const isNewUser = !syncedUser.createdAt || syncedUser.createdAt.getTime() === Date.now();
+    
+    console.log("User Sync - User synced successfully:", syncedUser.email);
+    return NextResponse.json({ 
+      message: isNewUser ? "User created successfully" : "User updated successfully", 
+      user: syncedUser,
+      isNewUser 
+    });
 
   } catch (error) {
     console.error("User Sync - Error:", error);
