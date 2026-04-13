@@ -20,12 +20,15 @@ function createPrismaClient(): PrismaClient {
     });
   }
 
-  // ✅ Option 2: PostgreSQL adapter (YOUR CASE)
+  // Option 2: PostgreSQL adapter (YOUR CASE)
   if (databaseUrl) {
     console.info("[prisma] Using PostgreSQL adapter");
 
     const adapter = new PrismaPg({
       connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     });
 
     return new PrismaClient({
