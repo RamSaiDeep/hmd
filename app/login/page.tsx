@@ -105,19 +105,19 @@ function LoginContent() {
     setLoading(false);
   }
 
-  // 🔥 GOOGLE LOGIN
-  async function handleGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+  // 🔥 GOOGLE LOGIN - DISABLED FOR SECURITY
+  // async function handleGoogle() {
+  //   const { error } = await supabase.auth.signInWithOAuth({
+  //     provider: "google",
+  //     options: {
+  //       redirectTo: `${window.location.origin}/auth/callback`,
+  //     },
+  //   });
 
-    if (error) {
-      setError(error.message);
-    }
-  }
+  //   if (error) {
+  //     setError(error.message);
+  //   }
+  // }
 
   return (
     <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border bg-card p-6 text-foreground shadow-xl">
@@ -194,9 +194,10 @@ function LoginContent() {
 
       <p className="text-center my-3">or</p>
 
-      <button className={googleClass} onClick={handleGoogle}>
+      {/* Google login disabled for security */}
+      {/* <button className={googleClass} onClick={handleGoogle}>
         Continue with Google
-      </button>
+      </button> */}
 
       <Link href="/">← Back</Link>
     </div>
