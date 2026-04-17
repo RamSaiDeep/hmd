@@ -55,7 +55,12 @@ export async function GET(request: Request) {
     }
 
     console.log("Auth callback — error:", error.message);
+    // If the token was exchanged already (e.g. by an email scanner tool verifying links),
+    // it will return an error here, but the user *is* actually verified.
+    // Instead of showing a scary error, prompt them to just login.
+    return NextResponse.redirect(`${origin}/login?verified=true`);
   }
 
-  return NextResponse.redirect(`${origin}/login?error=Could not verify email`);
+  // If there's no code in the URL at all
+  return NextResponse.redirect(`${origin}/login?error=Invalid verification link`);
 }

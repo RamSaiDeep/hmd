@@ -1,6 +1,7 @@
+
 const categories = [
-  { label: "Music Programs", icon: "🎵", href: "/category/music-programs" },
-  { label: "Others", icon: "⚙️", href: "/category/others" },
+  { label: "Music Programs", icon: "🎵", href: "/category/music-programs", image: "/images/music.png" },
+  { label: "Others", icon: "⚙️", href: "/category/others", image: "/images/others.png" },
 ];
 
 export default function CategoryCards() {
@@ -17,17 +18,19 @@ export default function CategoryCards() {
             <a
               key={cat.label}
               href={cat.href}
-              className="group relative p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] hover:border-[var(--color-primary-light)] transition-all duration-300 hover:shadow-lg hover:shadow-[var(--color-primary-light)]/10 hover:-translate-y-1"
+              className="group relative h-64 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] hover:border-[var(--color-primary-light)] transition-all duration-300 hover:shadow-lg hover:shadow-[var(--color-primary-light)]/20 hover:-translate-y-1 block"
             >
-              {/* Background accent on hover */}
-              <div className="absolute inset-0 bg-[var(--color-primary-light)]/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              {/* Background Image Placeholder */}
+              
+              {/* Gradient Overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent"></div>
               
               {/* Content */}
-              <div className="relative flex flex-col items-center gap-4">
-                <div className="bg-gradient-to-br from-[var(--color-primary-light)]/20 to-[var(--color-accent-cyan)]/10 rounded-xl p-4 text-4xl group-hover:scale-110 transition-transform duration-300">
+              <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col gap-2">
+                <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 w-fit text-3xl mb-2 border border-white/20 text-white shadow-xl">
                   {cat.icon}
                 </div>
-                <span className="text-center font-semibold text-[var(--color-text)] text-sm sm:text-base group-hover:text-[var(--color-primary-light)] transition-colors">{cat.label}</span>
+                <span className="font-bold text-white text-xl sm:text-2xl group-hover:text-[var(--color-primary-light)] transition-colors">{cat.label}</span>
               </div>
             </a>
           ))}
