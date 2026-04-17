@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 export async function authenticateRequest() {
   const supabase = await createClient();
@@ -29,8 +29,8 @@ export async function authenticateRequest() {
   }
 }
 
-export async function requireAuth(handler: (user: any, ...args: any[]) => Promise<Response>) {
-  return async (...args: any[]) => {
+export function requireAuth(handler: (user: any, request: NextRequest) => Promise<Response>) {
+  return async (request: NextRequest) => {
     const auth = await authenticateRequest();
     
     if (!auth.success) {
@@ -40,7 +40,7 @@ export async function requireAuth(handler: (user: any, ...args: any[]) => Promis
       );
     }
     
-    return handler(auth.user, ...args);
+    return handler(auth.user, request);
   };
 }
 
