@@ -1,16 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { requireAuth, createSecureResponse } from "@/lib/auth-middleware";
 
-export async function GET() {
+export const GET = requireAuth(async (user) => {
   try {
     const supabase = await createClient();
-
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (!user || error) {
-      return NextResponse.json({ complaints: [] }, { status: 401 });
-    }
 
     // 🔥 Get user from DB
     const dbUser = await prisma.user.findUnique({
@@ -18,7 +13,7 @@ export async function GET() {
     });
 
     if (!dbUser) {
-      return NextResponse.json({ complaints: [] });
+      return createSecureResponse({ complaints: [] });
     }
 
     // 🔥 Fetch ONLY this user's complaints
@@ -31,25 +26,17 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ complaints });
+    return createSecureResponse({ complaints });
 
   } catch (error) {
     console.error("GET /complaints error:", error);
-    return NextResponse.json({ complaints: [] }, { status: 500 });
+    return createSecureResponse({ complaints: [] }, 500);
   }
-}
+});
 
-export async function POST(req: Request) {
+export const POST = requireAuth(async (user, req: Request) => {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return NextResponse.json({ error: "Not logged in" }, { status: 401 });
-    }
 
     if (!user.email?.trim()) {
       return NextResponse.json({ error: "User email missing" }, { status: 400 });
@@ -107,9 +94,9 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ complaint }, { status: 201 });
+    return createSecureResponse({ complaint }, 201);
   } catch (error) {
     console.error("POST /complaints error:", error);
-    return NextResponse.json({ error: "Failed to submit complaint" }, { status: 500 });
+    return createSecureResponse({ error: "Failed to submit complaint" }, 500);
   }
-}
+});
