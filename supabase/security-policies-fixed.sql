@@ -1,140 +1,182 @@
--- Supabase Security Policies Implementation (FIXED)
--- This file implements Row-Level Security (RLS) to fix critical security vulnerabilities
--- Updated to handle auth.users permission restrictions
+-- Supabase RLS hardening for Prisma-managed public tables
+-- Safe to run multiple times (idempotent where possible).
+
+BEGIN;
+
+-- Preflight (optional): inspect current RLS status before changes.
+-- SELECT schemaname, tablename, rowsecurity, forcerowsecurity
+-- FROM pg_tables
+-- WHERE schemaname = 'public'
+-- ORDER BY tablename;
 
 -- =====================================================
--- IMPORTANT: Since we cannot modify auth.users directly,
--- we'll focus on securing your application data in PostgreSQL
+-- 1) Turn on RLS for application tables in public schema
 -- =====================================================
+ALTER TABLE IF EXISTS public."User" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."Account" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."Session" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."VerificationToken" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."Complaint" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."EventRequest" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."MusicRequest" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."StudioBooking" ENABLE ROW LEVEL SECURITY;
 
--- =====================================================
--- PHASE 1: Enable RLS on Your Application Tables
--- =====================================================
-
--- Note: auth.users is a Supabase system table and cannot be modified
--- Instead, we'll secure your application data through API-level security
--- and database connection security
-
--- =====================================================
--- PHASE 2: Secure Your Application Data
--- =====================================================
-
--- If you have any custom tables in Supabase, add RLS here
--- Example for a custom profiles table (if it exists):
-/*
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Service role full access on profiles" ON profiles
-  FOR ALL USING (auth.role() = 'service_role');
-*/
+-- Force RLS so table owners do not bypass policies accidentally.
+ALTER TABLE IF EXISTS public."User" FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."Account" FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."Session" FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."VerificationToken" FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."Complaint" FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."EventRequest" FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."MusicRequest" FORCE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public."StudioBooking" FORCE ROW LEVEL SECURITY;
 
 -- =====================================================
--- PHASE 3: Alternative Security Approach
+-- 2) Remove old policies (if present) so this can be rerun
 -- =====================================================
+DROP POLICY IF EXISTS "user_select_own" ON public."User";
+DROP POLICY IF EXISTS "user_update_own" ON public."User";
 
--- Since we cannot modify auth tables, we'll implement security through:
--- 1. API-level authentication checks
--- 2. Database connection security
--- 3. Service role key protection
+DROP POLICY IF EXISTS "complaint_select_own" ON public."Complaint";
+DROP POLICY IF EXISTS "complaint_insert_own" ON public."Complaint";
+DROP POLICY IF EXISTS "complaint_update_own" ON public."Complaint";
 
--- =====================================================
--- PHASE 4: Database Security Settings
--- =====================================================
+DROP POLICY IF EXISTS "music_request_select_own" ON public."MusicRequest";
+DROP POLICY IF EXISTS "music_request_insert_own" ON public."MusicRequest";
+DROP POLICY IF EXISTS "music_request_update_own" ON public."MusicRequest";
 
--- Ensure your PostgreSQL database has proper security
--- These settings should be applied in your PostgreSQL configuration
+DROP POLICY IF EXISTS "studio_booking_select_own" ON public."StudioBooking";
+DROP POLICY IF EXISTS "studio_booking_insert_own" ON public."StudioBooking";
+DROP POLICY IF EXISTS "studio_booking_update_own" ON public."StudioBooking";
 
--- Check current security settings
-SELECT 
-    name, 
-    setting 
-FROM pg_settings 
-WHERE name IN (
-    'ssl', 
-    'ssl_cert_file', 
-    'ssl_key_file', 
-    'password_encryption',
-    'row_security'
-);
+DROP POLICY IF EXISTS "service_role_all_account" ON public."Account";
+DROP POLICY IF EXISTS "service_role_all_session" ON public."Session";
+DROP POLICY IF EXISTS "service_role_all_verification_token" ON public."VerificationToken";
+DROP POLICY IF EXISTS "service_role_all_event_request" ON public."EventRequest";
 
 -- =====================================================
--- PHASE 5: Application-Level Security
+-- 3) Policies: authenticated user can only access own rows
 -- =====================================================
 
--- Since we cannot secure auth.users directly, implement these security measures:
+-- User profile row access
+CREATE POLICY "user_select_own"
+ON public."User"
+FOR SELECT
+TO authenticated
+USING (id = auth.uid()::text);
 
--- 1. Secure your API routes with proper authentication
--- 2. Use service role key only on server-side
--- 3. Implement rate limiting
--- 4. Add input validation
--- 5. Monitor suspicious activity
+CREATE POLICY "user_update_own"
+ON public."User"
+FOR UPDATE
+TO authenticated
+USING (id = auth.uid()::text)
+WITH CHECK (id = auth.uid()::text);
+
+-- Complaint access
+CREATE POLICY "complaint_select_own"
+ON public."Complaint"
+FOR SELECT
+TO authenticated
+USING ("userId" = auth.uid()::text);
+
+CREATE POLICY "complaint_insert_own"
+ON public."Complaint"
+FOR INSERT
+TO authenticated
+WITH CHECK ("userId" = auth.uid()::text);
+
+CREATE POLICY "complaint_update_own"
+ON public."Complaint"
+FOR UPDATE
+TO authenticated
+USING ("userId" = auth.uid()::text)
+WITH CHECK ("userId" = auth.uid()::text);
+
+-- Music request access (nullable userId is allowed only for service role inserts)
+CREATE POLICY "music_request_select_own"
+ON public."MusicRequest"
+FOR SELECT
+TO authenticated
+USING ("userId" = auth.uid()::text);
+
+CREATE POLICY "music_request_insert_own"
+ON public."MusicRequest"
+FOR INSERT
+TO authenticated
+WITH CHECK ("userId" = auth.uid()::text);
+
+CREATE POLICY "music_request_update_own"
+ON public."MusicRequest"
+FOR UPDATE
+TO authenticated
+USING ("userId" = auth.uid()::text)
+WITH CHECK ("userId" = auth.uid()::text);
+
+-- Studio booking access
+CREATE POLICY "studio_booking_select_own"
+ON public."StudioBooking"
+FOR SELECT
+TO authenticated
+USING ("userId" = auth.uid()::text);
+
+CREATE POLICY "studio_booking_insert_own"
+ON public."StudioBooking"
+FOR INSERT
+TO authenticated
+WITH CHECK ("userId" = auth.uid()::text);
+
+CREATE POLICY "studio_booking_update_own"
+ON public."StudioBooking"
+FOR UPDATE
+TO authenticated
+USING ("userId" = auth.uid()::text)
+WITH CHECK ("userId" = auth.uid()::text);
 
 -- =====================================================
--- VERIFICATION QUERIES
+-- 4) Server-only tables: service_role only
 -- =====================================================
 
--- Check if RLS is enabled on custom tables (if any)
-SELECT 
-    schemaname, 
-    tablename, 
-    rowsecurity 
-FROM pg_tables 
-WHERE schemaname = 'public' 
-AND rowsecurity = true;
+CREATE POLICY "service_role_all_account"
+ON public."Account"
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
 
--- Check existing policies
-SELECT 
-    schemaname, 
-    tablename, 
-    policyname, 
-    permissive, 
-    roles, 
-    cmd, 
-    qual 
-FROM pg_policies 
-WHERE schemaname = 'public';
+CREATE POLICY "service_role_all_session"
+ON public."Session"
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
 
--- =====================================================
--- SECURITY NOTES:
--- =====================================================
+CREATE POLICY "service_role_all_verification_token"
+ON public."VerificationToken"
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
 
--- 1. The auth.users table is a Supabase system table and cannot be modified
--- 2. Security must be implemented through:
---    - API-level authentication checks
---    - Proper use of service role vs anon role keys
---    - Database connection security
---    - Application-level validation
+CREATE POLICY "service_role_all_event_request"
+ON public."EventRequest"
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
 
--- 3. Your current setup uses PostgreSQL + Prisma for data storage
---    which is separate from Supabase auth tables
-
--- 4. The critical security alerts from Supabase are about:
---    - Public access to auth tables
---    - Since we cannot modify auth tables, we need to:
---      a) Restrict API access to authenticated users only
---      b) Implement proper API security
---      c) Use service role keys appropriately
+COMMIT;
 
 -- =====================================================
--- NEXT STEPS:
+-- 5) Verification queries
 -- =====================================================
+-- RLS status by table:
+-- SELECT schemaname, tablename, rowsecurity, forcerowsecurity
+-- FROM pg_tables
+-- WHERE schemaname = 'public'
+-- ORDER BY tablename;
 
--- 1. Implement API-level security (see api-security-enhancements.md)
--- 2. Add authentication middleware to all API routes
--- 3. Implement rate limiting and input validation
--- 4. Use service role key only for server-side operations
--- 5. Monitor and log security events
-
--- =====================================================
--- EMERGENCY: If you need to secure auth tables immediately
--- =====================================================
-
--- Contact Supabase support to enable RLS on auth tables
--- Or consider migrating to a different authentication approach
--- if the security risk is too high
+-- Effective policies:
+-- SELECT schemaname, tablename, policyname, roles, cmd, qual, with_check
+-- FROM pg_policies
+-- WHERE schemaname = 'public'
+-- ORDER BY tablename, policyname;
