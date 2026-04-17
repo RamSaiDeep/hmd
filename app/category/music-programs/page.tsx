@@ -115,7 +115,7 @@ export default function MusicPrograms() {
     setVenue("");
     setSoundRows([{ item: "", quantity: "" }, { item: "", quantity: "" }]);
     setNeedsLight(false);
-    setLighting([]);
+    setLighting("");
     setNotes("");
   }
 
