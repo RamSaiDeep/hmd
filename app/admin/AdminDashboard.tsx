@@ -53,6 +53,13 @@ type MusicRequestItem = {
   lighting: string[];
   notes?: string | null;
   status: string;
+  adminResponse?: string | null;
+  alternativeDate?: string | null;
+  alternativeTime?: string | null;
+  alternativeVenue?: string | null;
+  alternativeSoundItems?: any;
+  alternativeLighting?: string[];
+  alternativeNotes?: string | null;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -104,11 +111,18 @@ export default function AdminDashboard({
   const [selectedMusic, setSelectedMusic] = useState<MusicRequestItem | null>(null);
   const [musicAction, setMusicAction] = useState<'accept' | 'reject' | 'alternative'>('accept');
   const [adminResponse, setAdminResponse] = useState('');
-  const [alternatives, setAlternatives] = useState({
+  const [alternatives, setAlternatives] = useState<{
+    date: string;
+    time: string;
+    venue: string;
+    soundItems: any;
+    lighting: string;
+    notes: string;
+  }>({
     date: '',
     time: '',
     venue: '',
-    soundItems: '',
+    soundItems: [],
     lighting: '',
     notes: ''
   });
@@ -294,8 +308,8 @@ export default function AdminDashboard({
       date: '',
       time: '',
       venue: '',
-      soundItems: '',
-      lighting: [],
+      soundItems: [],
+      lighting: '',
       notes: ''
     });
   }
