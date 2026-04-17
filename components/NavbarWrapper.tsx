@@ -102,19 +102,15 @@ export default function NavbarWrapper() {
     userRole === "admin"
       ? [
           { href: "/dashboard", label: "My Dashboard" },
-          { href: "/member?view=all", label: "All Complaints" },
-          { href: "/member?view=mine", label: "My Complaints" },
-          { href: "/admin", label: "Admin" },
+          { href: "/admin", label: "Admin Panel" },
         ]
       : userRole === "member"
       ? [
           { href: "/dashboard", label: "My Dashboard" },
-          { href: "/member?view=all", label: "All Complaints" },
-          { href: "/member?view=mine", label: "My Complaints" },
+          { href: "/member", label: "Member Dashboard" },
         ]
       : [
           { href: "/dashboard", label: "My Dashboard" },
-          { href: "/register-complaint", label: "New Complaint" },
         ];
 
   return (
@@ -138,7 +134,7 @@ export default function NavbarWrapper() {
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-foreground")}>
+          <Link href="/" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex text-foreground")}>
             Home
           </Link>
 
@@ -176,6 +172,22 @@ export default function NavbarWrapper() {
                   <div className="px-3 py-2 rounded-lg bg-muted text-muted-foreground text-xs font-semibold">
                     {userRole === "admin" ? "🔴 Admin" : userRole === "member" ? "🔵 Member" : "⚪ User"}
                   </div>
+
+                  {navLinks.length > 0 && (
+                    <div className="md:hidden">
+                      <hr className="my-2 border-border" />
+                      {navLinks.map((item) => (
+                        <Link
+                          key={item.href + item.label}
+                          href={item.href}
+                          onClick={() => setMenuOpen(false)}
+                          className="block px-3 py-2 rounded-lg text-sm text-foreground hover:bg-accent"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
 
                   <hr className="my-2 border-border" />
 

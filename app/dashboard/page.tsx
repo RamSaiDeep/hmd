@@ -117,6 +117,24 @@ export default function DashboardPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
+  async function handleAlternativeResponse(id: string, action: 'accept' | 'reject') {
+    try {
+      const response = await fetch('/api/user/music-requests/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action }),
+      });
+      if (response.ok) {
+        setMusicRequests(prev => prev.map(r => r.id === id ? { ...r, status: action === 'accept' ? 'Alternative Accepted' : 'Alternative Rejected' } : r));
+      } else {
+        alert("Failed to respond. Please try again.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error processing response.");
+    }
+  }
+
   if (loading) {
     return <div className="mx-auto w-full max-w-5xl px-4 py-8">Loading...</div>;
   }
@@ -176,6 +194,8 @@ export default function DashboardPage() {
                 <TableRow>
                   <TableHead>Place</TableHead>
                   <TableHead>Issue</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Photo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Date</TableHead>
@@ -186,8 +206,18 @@ export default function DashboardPage() {
                   <TableRow key={c.id}>
                     <TableCell>{c.place}</TableCell>
                     <TableCell>
-                      {c.issueType}
-                      {c.issueDetail ? ` - ${c.issueDetail}` : ""}
+                      <div className="font-medium">{c.issueType}</div>
+                      {c.issueDetail && <div className="text-sm text-muted-foreground">{c.issueDetail}</div>}
+                    </TableCell>
+                    <TableCell className="whitespace-pre-wrap max-w-xs align-top">
+                      {c.description || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {c.photoUrl ? (
+                        <a href={c.photoUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                          View
+                        </a>
+                      ) : "—"}
                     </TableCell>
                     <TableCell>{c.status}</TableCell>
                     <TableCell>{c.priority}</TableCell>
@@ -221,8 +251,8 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded ${
-                    request.status === 'Accepted' ? 'bg-green-100 text-green-800' :
-                    request.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                    request.status === 'Accepted' || request.status === 'Alternative Accepted' ? 'bg-green-100 text-green-800' :
+                    request.status === 'Rejected' || request.status === 'Alternative Rejected' ? 'bg-red-100 text-red-800' :
                     request.status === 'Alternative Offered' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
@@ -267,7 +297,7 @@ export default function DashboardPage() {
                 )}
 
                 {/* Alternative Arrangement */}
-                {request.status === 'Alternative Offered' && (
+                {(request.status === 'Alternative Offered' || request.status === 'Alternative Accepted' || request.status === 'Alternative Rejected') && (
                   <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-sm font-medium text-blue-900 mb-2">Alternative Arrangement:</p>
                     <div className="space-y-1 text-sm text-blue-800">
@@ -299,6 +329,21 @@ export default function DashboardPage() {
                         </div>
                       )}
                       {request.alternativeNotes && <p><strong>Notes:</strong> {request.alternativeNotes}</p>}
+                    </div>
+
+                    <div className="mt-4 flex gap-2">
+                       <button 
+                         onClick={() => handleAlternativeResponse(request.id, 'accept')} 
+                         className={`${request.status === 'Alternative Accepted' ? 'bg-green-700 ring-2 ring-green-900 ring-offset-1' : 'bg-green-600'} hover:bg-green-700 text-white rounded-md px-3 py-1.5 text-xs font-medium tracking-wide transition`}
+                       >
+                         {request.status === 'Alternative Accepted' ? '✓ Alternative Accepted' : 'Accept Alternative'}
+                       </button>
+                       <button 
+                         onClick={() => handleAlternativeResponse(request.id, 'reject')} 
+                         className={`${request.status === 'Alternative Rejected' ? 'bg-red-700 ring-2 ring-red-900 ring-offset-1' : 'bg-red-600'} hover:bg-red-700 text-white rounded-md px-3 py-1.5 text-xs font-medium tracking-wide transition`}
+                       >
+                         {request.status === 'Alternative Rejected' ? '✕ Alternative Rejected' : 'Reject Alternative'}
+                       </button>
                     </div>
                   </div>
                 )}

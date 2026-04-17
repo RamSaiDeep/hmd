@@ -3,17 +3,10 @@ import { useState } from "react";
 
 type DhwaniRow = { item: string; quantity: string };
 
-const lightingOptions = [
-  { value: "white", label: "White — Bright clean light" },
-  { value: "warm-white", label: "Warm White — Soft yellow tone" },
-  { value: "colored", label: "Colored / RGB — Dynamic colors" },
-  { value: "spotlights", label: "Spotlights — Focused beams" },
-  { value: "flood", label: "Flood Lights — Wide coverage" },
-];
-
 export default function MusicPrograms() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Basic fields
   const [eventName, setEventName] = useState("");
@@ -30,7 +23,7 @@ export default function MusicPrograms() {
 
   // Lighting
   const [needsLight, setNeedsLight] = useState(false);
-  const [lighting, setLighting] = useState<string[]>([]);
+  const [lighting, setLighting] = useState<string>("");
 
   // Additional notes
   const [notes, setNotes] = useState("");
@@ -49,13 +42,10 @@ export default function MusicPrograms() {
     );
   }
 
-  function toggleLighting(value: string) {
-    setLighting((prev) =>
-      prev.includes(value) ? prev.filter((l) => l !== value) : [...prev, value]
-    );
-  }
-
   async function handleSubmit() {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
     // Clear any previous errors
     setError("");
     
@@ -86,7 +76,7 @@ export default function MusicPrograms() {
       venue,
       soundItems: soundRows.filter((row) => row.item.trim() && row.quantity.trim()),
       needsLight,
-      lighting: needsLight ? lighting : [],
+      lighting: needsLight && lighting.trim() ? [lighting.trim()] : [],
       notes,
     };
 
@@ -109,12 +99,15 @@ export default function MusicPrograms() {
       setSubmitted(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to submit request");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   function handleReset() {
     setSubmitted(false);
     setError("");
+    setIsSubmitting(false);
     setEventName("");
     setOrganizerName("");
     setEventDate("");
@@ -184,6 +177,7 @@ export default function MusicPrograms() {
                   <input
                     id="eventDate"
                     type="date"
+                    min={new Date().toISOString().split("T")[0]}
                     value={eventDate}
                     onChange={(e) => setEventDate(e.target.value)}
                     className="rounded-xl px-4 py-3 text-sm text-foreground border bg-background focus:outline-none focus:border-primary transition"
@@ -290,21 +284,13 @@ export default function MusicPrograms() {
                 {needsLight && (
                   <div className="border border-border rounded-xl p-4 flex flex-col gap-3">
                     <h3 className="text-sm font-medium text-foreground">Lighting Requirements</h3>
-                    {lightingOptions.map((opt) => (
-                      <div key={opt.value}>
-                        <label className="flex items-start gap-3 cursor-pointer border border-border rounded-lg px-3 py-2">
-                          <input
-                            type="checkbox"
-                            checked={lighting.includes(opt.value)}
-                            onChange={() => toggleLighting(opt.value)}
-                            className="w-4 h-4 mt-0.5"
-                          />
-                          <div>
-                            <p className="text-foreground text-sm">{opt.label}</p>
-                          </div>
-                        </label>
-                      </div>
-                    ))}
+                    <textarea
+                      value={lighting}
+                      onChange={(e) => setLighting(e.target.value)}
+                      placeholder="Describe your lighting requirements (e.g. RGB strobing, warm wash for stage, spot on drums...)"
+                      rows={4}
+                      className="w-full rounded-xl px-4 py-3 text-sm text-foreground border border-border bg-background focus:outline-none focus:border-primary transition"
+                    />
                   </div>
                 )}
               </div>
@@ -326,9 +312,10 @@ export default function MusicPrograms() {
 
               <button 
                 onClick={handleSubmit}
-                className="bg-primary hover:bg-primary/90 py-3 rounded-xl font-semibold text-primary-foreground w-full"
+                disabled={isSubmitting}
+                className="bg-primary hover:bg-primary/90 py-3 rounded-xl font-semibold text-primary-foreground w-full disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Submit Request →
+                {isSubmitting ? "Submitting..." : "Submit Request →"}
               </button>
             </div>
           )}

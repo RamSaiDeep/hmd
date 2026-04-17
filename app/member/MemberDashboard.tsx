@@ -16,6 +16,8 @@ type ComplaintItem = {
   place: string;
   issueType: string;
   issueDetail?: string | null;
+  description?: string | null;
+  photoUrl?: string | null;
   status: string;
   priority: string;
   createdAt: string;
@@ -189,6 +191,8 @@ export default function MemberDashboard({
                   <tr>
                     <th className="px-3 py-2">Place</th>
                     <th className="px-3 py-2">Issue</th>
+                    <th className="px-3 py-2">Description</th>
+                    <th className="px-3 py-2">Photo</th>
                     <th className="px-3 py-2">User</th>
                     <th className="px-3 py-2">Date</th>
                     <th className="px-3 py-2">Status</th>
@@ -200,9 +204,17 @@ export default function MemberDashboard({
                   {visibleComplaints.map((c) => (
                     <tr key={c.id} className="border-t border-border">
                       <td className="px-3 py-2">{c.place}</td>
-                      <td className="px-3 py-2">
-                        {c.issueType}
-                        {c.issueDetail ? ` — ${c.issueDetail}` : ""}
+                      <td className="px-3 py-2 align-top">
+                        <div className="font-medium">{c.issueType}</div>
+                        {c.issueDetail && <div className="text-sm text-muted-foreground">{c.issueDetail}</div>}
+                      </td>
+                      <td className="px-3 py-2 align-top whitespace-pre-wrap max-w-xs">{c.description || "—"}</td>
+                      <td className="px-3 py-2 align-top">
+                        {c.photoUrl ? (
+                          <a href={c.photoUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                            View
+                          </a>
+                        ) : "—"}
                       </td>
                       <td className="px-3 py-2">{c.user?.name || c.user?.email}</td>
                       <td className="px-3 py-2">{dateFormatter.format(new Date(c.createdAt))}</td>

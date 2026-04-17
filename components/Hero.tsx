@@ -16,8 +16,8 @@ export default function Hero() {
         </div>
 
         {/* Main heading */}
-        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight text-[var(--color-text)] max-w-4xl drop-shadow-sm">
-          Hostel Maintenance <br />
+        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight text-[var(--color-text)] max-w-4xl drop-shadow-sm px-2">
+          Hostel Maintenance <br className="hidden sm:block" />
           <span className="text-[var(--color-primary-light)] bg-gradient-to-r from-[var(--color-primary-light)] to-[var(--color-accent-cyan)] bg-clip-text text-transparent">Department</span>
         </h1>
 
@@ -28,7 +28,7 @@ export default function Hero() {
         {/* CTA button - goes to complaint registration page */}
         <Link
           href="/register-complaint"
-          className="bg-[var(--color-primary-light)] hover:bg-[var(--color-primary-lighter)] text-white dark:text-[var(--color-bg)] transition-all px-8 py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg hover:shadow-[var(--color-primary-light)]/50 border border-[var(--color-primary-lighter)]/20 hover:scale-105 transform duration-200 inline-block"
+          className="bg-[var(--color-primary-light)] hover:bg-[var(--color-primary-lighter)] text-white dark:text-[var(--color-bg)] transition-all px-6 py-3 sm:px-8 sm:py-4 rounded-xl font-bold text-base sm:text-lg shadow-lg hover:shadow-[var(--color-primary-light)]/50 border border-[var(--color-primary-lighter)]/20 hover:scale-105 transform duration-200 inline-block"
         >
           Register Complaint →
         </Link>

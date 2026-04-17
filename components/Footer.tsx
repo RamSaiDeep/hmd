@@ -18,7 +18,7 @@ export default function Footer() {
 
         <div className="border-t border-[var(--color-border)] pt-8 flex flex-col sm:flex-row justify-between gap-4 text-xs sm:text-sm text-[var(--color-text-tertiary)]">
           <span>© 2025-26 Hostel Maintenance Department. All rights reserved.</span>
-          <span>Designed with 💜 by HMD Team  an offering at his Lotus Feet</span>
+          <span>Designed with 💜 by HMD Team - an offering at his Lotus Feet</span>
         </div>
       </div>
     </footer>

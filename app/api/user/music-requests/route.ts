@@ -32,6 +32,13 @@ export async function GET() {
         lighting: request.lighting,
         notes: request.notes,
         status: request.status,
+        adminResponse: request.adminResponse,
+        alternativeDate: request.alternativeDate,
+        alternativeTime: request.alternativeTime,
+        alternativeVenue: request.alternativeVenue,
+        alternativeSoundItems: request.alternativeSoundItems,
+        alternativeLighting: request.alternativeLighting,
+        alternativeNotes: request.alternativeNotes,
         createdAt: request.createdAt.toISOString(),
       }))
     });

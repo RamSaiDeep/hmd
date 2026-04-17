@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type AdminView = "complaints" | "events" | "music" | "users";
@@ -17,6 +18,8 @@ type ComplaintItem = {
   place: string;
   issueType: string;
   issueDetail?: string | null;
+  description?: string | null;
+  photoUrl?: string | null;
   status: string;
   priority: string;
   createdAt: string;
@@ -106,9 +109,32 @@ export default function AdminDashboard({
     time: '',
     venue: '',
     soundItems: '',
-    lighting: [] as string[],
+    lighting: '',
     notes: ''
   });
+
+  const router = useRouter();
+
+  // Auto-refresh data from Server Component periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 15000); // 15-second "almost live" refresh rate
+    return () => clearInterval(interval);
+  }, [router]);
+
+  // Sync incoming live props gracefully to the dashboard without overwriting active operations
+  useEffect(() => {
+    setLocalComplaints(complaints);
+  }, [complaints]);
+
+  useEffect(() => {
+    setLocalMusicRequests(musicRequests);
+  }, [musicRequests]);
+
+  useEffect(() => {
+    setLocalUsers(users);
+  }, [users]);
 
   async function updateComplaint(id: string, field: "status" | "priority", value: string) {
     // Optimistic update
@@ -214,7 +240,17 @@ export default function AdminDashboard({
     
     // Optimistic update
     setLocalMusicRequests(prev => 
-      prev.map(m => m.id === id ? { ...m, status, adminResponse: response } : m)
+      prev.map(m => m.id === id ? { 
+        ...m, 
+        status, 
+        adminResponse: response,
+        ...(alt && {
+          alternativeDate: alt.date,
+          alternativeTime: alt.time,
+          alternativeVenue: alt.venue,
+          alternativeNotes: alt.notes,
+        })
+      } : m)
     );
 
     try {
@@ -227,6 +263,7 @@ export default function AdminDashboard({
           alternatives: alt 
         }),
       });
+      setUpdatingMusicId(null);
     } catch (error) {
       console.error("Failed to update music request:", error);
       // Revert on error - would need to refetch from server
@@ -234,10 +271,18 @@ export default function AdminDashboard({
     }
   }
 
-  function openMusicModal(music: MusicRequestItem, action: 'accept' | 'reject') {
+  function openMusicModal(music: MusicRequestItem, action: 'accept' | 'reject' | 'alternative') {
     setSelectedMusic(music);
     setMusicAction(action);
     setAdminResponse('');
+    setAlternatives({
+      date: '',
+      time: '',
+      venue: '',
+      soundItems: action === 'alternative' && Array.isArray(music.soundItems) ? JSON.parse(JSON.stringify(music.soundItems)) : [],
+      lighting: action === 'alternative' && Array.isArray(music.lighting) ? music.lighting.join('\n') : '',
+      notes: ''
+    });
     setShowMusicModal(true);
   }
 
@@ -256,11 +301,9 @@ export default function AdminDashboard({
   }
 
   function getUserName(music: MusicRequestItem) {
-    // If music request has user information, use it
     if (music.user) {
       return music.user.name || music.user.email || 'Unknown User';
     }
-    // Fallback to searching users by organizer email
     const user = users.find(u => u.email === music.organizer);
     return user?.name || music.organizer || 'Unknown User';
   }
@@ -271,15 +314,33 @@ export default function AdminDashboard({
     let status = 'Pending';
     let response = adminResponse;
 
+    let finalAlternatives = undefined;
+
     if (musicAction === 'accept') {
       status = 'Accepted';
       response = 'Your music request has been accepted! We will provide the requested sound and lighting support.';
     } else if (musicAction === 'reject') {
       status = 'Rejected';
       response = adminResponse || 'Unfortunately, we cannot accommodate your request at this time.';
+    } else if (musicAction === 'alternative') {
+      status = 'Alternative Offered';
+      response = adminResponse || 'We can offer an alternative arrangement as detailed below.';
+      
+      const originalSoundStr = JSON.stringify(selectedMusic.soundItems || []);
+      const newSoundStr = JSON.stringify(alternatives.soundItems || []);
+      
+      const originalLightStr = JSON.stringify(selectedMusic.lighting || []);
+      const newLightArr = typeof alternatives.lighting === 'string' && alternatives.lighting.trim() ? [alternatives.lighting.trim()] : [];
+      const newLightStr = JSON.stringify(newLightArr);
+      
+      finalAlternatives = {
+        ...alternatives,
+        soundItems: originalSoundStr === newSoundStr ? null : alternatives.soundItems,
+        lighting: originalLightStr === newLightStr ? null : newLightArr
+      };
     }
 
-    updateMusicRequest(selectedMusic.id, status, response);
+    updateMusicRequest(selectedMusic.id, status, response, finalAlternatives);
     closeMusicModal();
   }
 
@@ -405,6 +466,8 @@ export default function AdminDashboard({
                 <tr>
                   <th className="px-3 py-2">Place</th>
                   <th className="px-3 py-2">Issue</th>
+                  <th className="px-3 py-2">Description</th>
+                  <th className="px-3 py-2">Photo</th>
                   <th className="px-3 py-2">User</th>
                   <th className="px-3 py-2">Date</th>
                   <th className="px-3 py-2">Status</th>
@@ -417,9 +480,17 @@ export default function AdminDashboard({
                 {filteredComplaints.map((c) => (
                   <tr key={c.id} className="border-t border-border">
                     <td className="px-3 py-2">{c.place}</td>
-                    <td className="px-3 py-2">
-                      {c.issueType}
-                      {c.issueDetail ? ` — ${c.issueDetail}` : ""}
+                    <td className="px-3 py-2 align-top">
+                      <div className="font-medium">{c.issueType}</div>
+                      {c.issueDetail && <div className="text-sm text-muted-foreground">{c.issueDetail}</div>}
+                    </td>
+                    <td className="px-3 py-2 align-top whitespace-pre-wrap max-w-xs">{c.description || "—"}</td>
+                    <td className="px-3 py-2 align-top">
+                      {c.photoUrl ? (
+                        <a href={c.photoUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                          View
+                        </a>
+                      ) : "—"}
                     </td>
                     <td className="px-3 py-2">{c.user?.name || c.user?.email}</td>
                     <td className="px-3 py-2">{dateFormatter.format(new Date(c.createdAt))}</td>
@@ -523,13 +594,40 @@ export default function AdminDashboard({
                     <td className="px-3 py-2 font-medium">{music.eventName}</td>
                     <td className="px-3 py-2">{getUserName(music)}</td>
                     <td className="px-3 py-2">{music.organizer}</td>
-                    <td className="px-3 py-2">{music.eventDate}</td>
-                    <td className="px-3 py-2">{music.eventTime || "Not specified"}</td>
-                    <td className="px-3 py-2">{music.venue}</td>
                     <td className="px-3 py-2">
-                      <div className="max-w-xs">
+                      <div className={music.alternativeDate ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>
+                        {music.eventDate}
+                      </div>
+                      {music.alternativeDate && (
+                        <div className="text-yellow-700 font-medium mt-1 text-xs bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded inline-block">
+                          Alt: {music.alternativeDate}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className={music.alternativeTime ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>
+                        {music.eventTime || "Not specified"}
+                      </div>
+                      {music.alternativeTime && (
+                        <div className="text-yellow-700 font-medium mt-1 text-xs bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded inline-block">
+                          Alt: {music.alternativeTime}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className={music.alternativeVenue ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>
+                        {music.venue}
+                      </div>
+                      {music.alternativeVenue && (
+                        <div className="text-yellow-700 font-medium mt-1 text-xs bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded inline-block">
+                          Alt: {music.alternativeVenue}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className={`max-w-xs ${music.alternativeSoundItems && (music.alternativeSoundItems as any[]).length > 0 ? "line-through text-muted-foreground opacity-70 text-xs" : ""}`}>
                         {Array.isArray(music.soundItems) && music.soundItems.length > 0 ? (
-                          <ul className="text-xs">
+                          <ul className="text-[10px] leading-tight">
                             {(music.soundItems as any[]).map((item: any, index: number) => (
                               <li key={index}>
                                 {item.item} ({item.quantity})
@@ -540,27 +638,47 @@ export default function AdminDashboard({
                           <span className="text-muted-foreground text-xs">No sound items</span>
                         )}
                       </div>
+                      {Array.isArray(music.alternativeSoundItems) && music.alternativeSoundItems.length > 0 && (
+                        <div className="mt-1 flex flex-col gap-0.5">
+                          <span className="text-[10px] font-bold text-yellow-700">Alt:</span>
+                          {(music.alternativeSoundItems as any[]).map((item: any, i: number) => (
+                            <span key={i} className="text-[10px] bg-yellow-100 text-yellow-800 border border-yellow-200 px-1 py-0 rounded max-w-max">
+                              {item.item} ({item.quantity})
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-2">
-                      <div>
+                      <div className={music.alternativeLighting && music.alternativeLighting.length > 0 ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>
                         {music.needsLight ? (
                           <div>
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Yes</span>
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Yes</span>
                             {music.lighting.length > 0 && (
-                              <div className="text-xs mt-1">
+                              <div className="text-[10px] mt-1 leading-tight">
                                 {music.lighting.join(", ")}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">No</span>
+                          <span className="text-[10px] bg-gray-100 text-gray-800 px-2 py-0.5 rounded">No</span>
                         )}
                       </div>
+                      {Array.isArray(music.alternativeLighting) && music.alternativeLighting.length > 0 && (
+                        <div className="mt-1 flex flex-col gap-0.5">
+                          <span className="text-[10px] font-bold text-yellow-700">Alt:</span>
+                          {music.alternativeLighting.map((light: string, i: number) => (
+                            <span key={i} className="text-[10px] bg-yellow-100 text-yellow-800 border border-yellow-200 px-1 py-0 rounded max-w-max">
+                              {light}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <span className={`text-xs px-2 py-1 rounded ${
-                        music.status === 'Accepted' ? 'bg-green-100 text-green-800' :
-                        music.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                        music.status === 'Accepted' || music.status === 'Alternative Accepted' ? 'bg-green-100 text-green-800' :
+                        music.status === 'Rejected' || music.status === 'Alternative Rejected' ? 'bg-red-100 text-red-800' :
                         music.status === 'Alternative Offered' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
@@ -582,6 +700,13 @@ export default function AdminDashboard({
                           className="rounded-md border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
                         >
                           Reject
+                        </button>
+                        <button
+                          onClick={() => openMusicModal(music, 'alternative')}
+                          disabled={updatingMusicId === music.id}
+                          className="rounded-md border border-yellow-600 px-2 py-1 text-xs text-yellow-600 hover:bg-yellow-50 disabled:opacity-60"
+                        >
+                          Alternative
                         </button>
                         <button
                           onClick={() => deleteMusicRequest(music.id)}
@@ -722,36 +847,67 @@ export default function AdminDashboard({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Sound Items</label>
-                  <textarea
-                    value={alternatives.soundItems}
-                    onChange={(e) => setAlternatives({...alternatives, soundItems: e.target.value})}
-                    placeholder="Item 1 (quantity)&#10;Item 2 (quantity)&#10;..."
-                    rows={3}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Alternative Lighting</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-medium text-foreground">Alternative Sound Items</label>
+                    <button
+                      type="button"
+                      onClick={() => setAlternatives({...alternatives, soundItems: [...(alternatives.soundItems as any[] || []), { item: "", quantity: "" }]})}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      + Add Item
+                    </button>
+                  </div>
                   <div className="space-y-2">
-                    {['white', 'warm-white', 'colored', 'spotlights', 'flood'].map((light) => (
-                      <label key={light} className="flex items-center gap-2">
+                    {Array.isArray(alternatives.soundItems) && alternatives.soundItems.map((snd: any, index: number) => (
+                      <div key={index} className="flex gap-2 items-center">
                         <input
-                          type="checkbox"
-                          checked={alternatives.lighting.includes(light)}
+                          type="text"
+                          placeholder="Item name"
+                          value={snd.item}
                           onChange={(e) => {
-                            if (e.target.checked) {
-                              setAlternatives({...alternatives, lighting: [...alternatives.lighting, light]});
-                            } else {
-                              setAlternatives({...alternatives, lighting: alternatives.lighting.filter(l => l !== light)});
-                            }
+                            const newArr = [...(alternatives.soundItems as any[])];
+                            newArr[index].item = e.target.value;
+                            setAlternatives({...alternatives, soundItems: newArr});
                           }}
-                          className="rounded"
+                          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
                         />
-                        <span className="text-sm">{light}</span>
-                      </label>
+                        <input
+                          type="text"
+                          placeholder="Qty"
+                          className="w-20 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={snd.quantity}
+                          onChange={(e) => {
+                            const newArr = [...(alternatives.soundItems as any[])];
+                            newArr[index].quantity = e.target.value;
+                            setAlternatives({...alternatives, soundItems: newArr});
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newArr = [...(alternatives.soundItems as any[])];
+                            newArr.splice(index, 1);
+                            setAlternatives({...alternatives, soundItems: newArr});
+                          }}
+                          className="text-red-500 hover:text-red-700 px-2 py-1"
+                        >
+                          ×
+                        </button>
+                      </div>
                     ))}
+                    {(!Array.isArray(alternatives.soundItems) || alternatives.soundItems.length === 0) && (
+                      <div className="text-xs text-muted-foreground italic py-1">No sound items specified.</div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">Alternative Lighting</label>
+                    <textarea
+                      value={alternatives.lighting as string}
+                      onChange={(e) => setAlternatives({...alternatives, lighting: e.target.value})}
+                      placeholder="Describe alternative lighting requirements..."
+                      rows={3}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
                   </div>
                 </div>
 

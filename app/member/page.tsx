@@ -47,6 +47,8 @@ export default async function MemberPage({
         place: c.place,
         issueType: c.issueType,
         issueDetail: c.issueDetail,
+        description: c.description,
+        photoUrl: c.photoUrl,
         status: c.status,
         priority: c.priority,
         createdAt: c.createdAt.toISOString(),

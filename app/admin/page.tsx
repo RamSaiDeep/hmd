@@ -44,6 +44,8 @@ export default async function AdminPage() {
         place: c.place,
         issueType: c.issueType,
         issueDetail: c.issueDetail,
+        description: c.description,
+        photoUrl: c.photoUrl,
         status: c.status,
         priority: c.priority,
         createdAt: c.createdAt.toISOString(),
@@ -72,6 +74,14 @@ export default async function AdminPage() {
         lighting: m.lighting,
         notes: m.notes,
         status: m.status,
+        adminResponse: m.adminResponse,
+        alternativeDate: m.alternativeDate,
+        alternativeTime: m.alternativeTime,
+        alternativeVenue: m.alternativeVenue,
+        alternativeSoundItems: m.alternativeSoundItems,
+        alternativeLighting: m.alternativeLighting,
+        alternativeNotes: m.alternativeNotes,
+        user: m.user ? { name: m.user.name, email: m.user.email } : null,
         createdAt: m.createdAt.toISOString(),
       }))}
       users={users.map((u) => ({

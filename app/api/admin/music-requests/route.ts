@@ -46,6 +46,15 @@ export async function PUT(request: Request) {
       where: { id },
       data: {
         status: status || "Pending",
+        ...(adminResponse !== undefined && { adminResponse }),
+        ...(alternatives && {
+          alternativeDate: alternatives.date || null,
+          alternativeTime: alternatives.time || null,
+          alternativeVenue: alternatives.venue || null,
+          alternativeLighting: Array.isArray(alternatives.lighting) ? alternatives.lighting : [],
+          alternativeNotes: alternatives.notes || null,
+          alternativeSoundItems: Array.isArray(alternatives.soundItems) ? alternatives.soundItems : null,
+        })
       },
     });
 
