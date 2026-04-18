@@ -13,7 +13,8 @@ export default function EventCTA() {
         </div>
         <Link
           href="/event-support"
-          className="bg-blue-600 hover:bg-blue-500 transition px-6 py-3 rounded-xl font-semibold whitespace-nowrap"
+          className="bg-blue-600 hover:bg-blue-500 text-white transition px-6 py-3 rounded-xl font-semibold whitespace-nowrap"
+          style={{ color: "#fff" }}
         >
           Request Event Support →
         </Link>

@@ -29,15 +29,15 @@ const teams = [
 
 export default function TeamSection() {
   return (
-    <section className="bg-white px-4 py-16 dark:bg-slate-900 sm:px-6 sm:py-24 lg:px-8">
+    <section className="bg-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-12 sm:mb-16">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400 sm:text-sm">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-blue-600 sm:text-sm">
             ⚙️ Our Teams
           </p>
-          <h2 className="mb-4 text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">Three Departments, One Mission</h2>
-          <p className="mx-auto max-w-2xl text-base text-slate-600 dark:text-slate-400 sm:text-lg">
+          <h2 className="mb-4 text-3xl font-bold text-slate-900 sm:text-4xl lg:text-5xl">Three Departments, One Mission</h2>
+          <p className="mx-auto max-w-2xl text-base text-slate-600 sm:text-lg">
             Crafting experiences through sound, light, and skilled hands. Operated by a passionate student crew.
           </p>
         </div>
@@ -47,12 +47,12 @@ export default function TeamSection() {
           {teams.map((team) => (
             <div
               key={team.name}
-              className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-300 bg-white transition-all duration-300 hover:-translate-y-2 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/20 dark:border-slate-700 dark:bg-slate-800/50"
+              className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-300 bg-white transition-all duration-300 hover:-translate-y-2 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/20"
             >
               {/* Image Header Placeholder */}
               <div className={`relative h-48 sm:h-56 w-full overflow-hidden bg-gradient-to-br ${team.gradientFrom} ${team.gradientTo}`}>
                 {/* Accent overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-transparent to-transparent opacity-80 transition-opacity group-hover:opacity-60 dark:from-slate-900"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-100 via-transparent to-transparent opacity-80 transition-opacity group-hover:opacity-60"></div>
               </div>
 
               {/* Content */}
@@ -61,8 +61,8 @@ export default function TeamSection() {
                   {team.icon}
                 </div>
                 
-                <h3 className="mb-2 mt-4 text-xl font-bold text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300 sm:text-2xl">{team.name}</h3>
-                <p className="flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">{team.desc}</p>
+                <h3 className="mb-2 mt-4 text-xl font-bold text-slate-900 transition-colors group-hover:text-blue-700 sm:text-2xl">{team.name}</h3>
+                <p className="flex-1 text-sm leading-relaxed text-slate-600 sm:text-base">{team.desc}</p>
               </div>
             </div>
           ))}

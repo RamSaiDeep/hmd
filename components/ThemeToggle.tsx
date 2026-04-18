@@ -21,14 +21,14 @@ export function ThemeToggle() {
         size="icon-sm"
         aria-label="Toggle theme"
         title="Toggle theme"
-        disabled
+        className="opacity-50"
       >
-        <div className="w-4 h-4" />
+        <div className="w-4 h-4 animate-pulse" />
       </Button>
     );
   }
 
-  const current = theme === "system" ? resolvedTheme : theme;
+  const current = theme === "system" ? resolvedTheme ?? "light" : theme ?? "light";
 
   return (
     <Button

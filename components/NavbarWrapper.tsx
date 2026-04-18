@@ -6,8 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { AudioLines, Mic, Speaker, Wrench } from "lucide-react";
-
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -149,8 +147,6 @@ export default function NavbarWrapper() {
                 {item.label}
               </Link>
             ))}
-
-          <ThemeToggle />
 
           {loading ? (
             <span className="text-muted-foreground text-sm">Loading...</span>
