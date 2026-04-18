@@ -1,7 +1,7 @@
 // Bottom footer with logo and copyright
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-800 bg-slate-900 mt-16">
+    <footer className="mt-16 border-t border-slate-300 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 sm:gap-8 mb-8">
           <div className="flex items-center gap-3">
@@ -9,14 +9,14 @@ export default function Footer() {
               H
             </div>
             <div className="text-center sm:text-left">
-              <div className="font-bold text-white">HMD</div>
-              <div className="text-xs text-slate-400">Hostel Maintenance Department</div>
+              <div className="font-bold text-slate-900 dark:text-white">HMD</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400">Hostel Maintenance Department</div>
             </div>
           </div>
-          <span className="text-slate-400 text-sm font-medium">✨ Imagine • Innovate • Inspire</span>
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">✨ Imagine • Innovate • Inspire</span>
         </div>
 
-        <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row justify-between gap-4 text-xs sm:text-sm text-slate-500">
+        <div className="flex flex-col justify-between gap-4 border-t border-slate-300 pt-8 text-xs text-slate-500 dark:border-slate-800 sm:flex-row sm:text-sm">
           <span>© 2025-26 Hostel Maintenance Department. All rights reserved.</span>
           <span>Designed with 💜 by HMD Team - an offering at his Lotus Feet</span>
         </div>
