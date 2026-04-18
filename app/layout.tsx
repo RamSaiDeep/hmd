@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
-import { Geist, Geist_Mono, Figtree } from "next/font/google";
+import { Inter, Outfit, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
 import NavbarWrapper from "@/components/NavbarWrapper";
 
-const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -36,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full dark", "antialiased", geistSans.variable, geistMono.variable, "font-sans", figtree.variable)}
+      className={cn("h-full dark", "antialiased", inter.variable, outfit.variable, geistMono.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors">
