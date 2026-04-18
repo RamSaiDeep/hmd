@@ -7,22 +7,22 @@ const stats = [
 
 export default function StatsSection() {
   return (
-    <section className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 bg-[var(--color-bg-secondary)]">
+    <section className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 bg-slate-950">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
           {stats.map((s) => (
             <div
               key={s.label}
-              className="group relative rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-6 sm:p-8 text-center hover:border-[var(--color-primary-light)]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[var(--color-primary-light)]/10"
+              className="group relative rounded-lg border border-slate-700 bg-gradient-to-br from-slate-800 to-slate-900 p-6 sm:p-8 text-center hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20"
             >
               {/* Hover accent */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary-light)]/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
               {/* Content */}
               <div className="relative z-10">
-                <div className="text-4xl sm:text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">{s.icon}</div>
-                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-[var(--color-primary-light)] to-[var(--color-accent-cyan)] bg-clip-text text-transparent mb-2">{s.value}</p>
-                <p className="text-[var(--color-text-secondary)] text-xs sm:text-sm font-medium">{s.label}</p>
+                <div className="text-4xl sm:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">{s.icon}</div>
+                <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-2">{s.value}</p>
+                <p className="text-slate-400 text-sm sm:text-base font-medium">{s.label}</p>
               </div>
             </div>
           ))}
