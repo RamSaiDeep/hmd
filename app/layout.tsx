@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full dark", "antialiased", inter.variable, outfit.variable, geistMono.variable)}
+      className={cn("h-full", "antialiased", inter.variable, outfit.variable, geistMono.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors">
