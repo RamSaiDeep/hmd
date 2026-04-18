@@ -1,14 +1,34 @@
 import Link from "next/link";
+import Image from "next/image";
 
 // Big center section at the top of the page
 export default function Hero() {
   return (
     <section className="relative flex flex-col items-center justify-center text-center py-20 sm:py-32 px-4 min-h-[calc(100vh-64px)] overflow-hidden">
-      {/* Background Image */}
-      {/* Background Image placeholder - Add image here later */}
-      {/* Overlay to ensure text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/90 via-[var(--color-bg-secondary)]/80 to-[var(--color-bg)] z-0"></div>
+      
+      {/* Immersive Full-Screen Background Image */}
+      <div className="absolute inset-0 z-0">
+        {/* 
+          INSTRUCTION: Save your magnificent glowing building photo 
+          into the 'public/images/' folder as 'hero-bg.jpg', 
+          then change 'music.png' below to 'hero-bg.jpg'.
+        */}
+        <Image 
+          src="/images/hero-bg.JPG" 
+          alt="Glowing Building Background" 
+          fill
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center'
+          }}
+          priority
+          className="opacity-[0.65] object-top"
+        />
+      </div>
 
+      {/* Fades out the bottom quarter of the background image into the dark mode color */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg)] from-0% via-[var(--color-bg)]/90 via-25% to-transparent to-50% z-0"></div>
+      
       <div className="relative z-10 flex flex-col items-center w-full">
         {/* Pill badge */}
         <div className="border border-[var(--color-primary-light)]/50 backdrop-blur-md bg-[var(--color-bg)]/40 rounded-full px-4 py-2 text-xs sm:text-sm text-[var(--color-text)] font-semibold shadow-sm mb-8">
