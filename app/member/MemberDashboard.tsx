@@ -24,9 +24,18 @@ type ComplaintItem = {
   updatedBy?: string | null;
   userId: string;
   user?: {
+    id?: string;
     name?: string | null;
     email?: string | null;
+    phone?: string | null;
   } | null;
+  acceptanceCount: number;
+  acceptedMembers: Array<{
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  }>;
 };
 
 type EventItem = {
@@ -60,12 +69,44 @@ export default function MemberDashboard({
   const [priorityFilter, setPriorityFilter] = useState("ALL");
   const [searchText, setSearchText] = useState("");
 
+  function ContactReveal({
+    label,
+    email,
+    phone,
+  }: {
+    label: string;
+    email?: string | null;
+    phone?: string | null;
+  }) {
+    return (
+      <details>
+        <summary className="cursor-pointer text-blue-600 hover:underline">{label}</summary>
+        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+          <div>Email: {email || "—"}</div>
+          <div>Phone: {phone || "—"}</div>
+        </div>
+      </details>
+    );
+  }
+
   async function updateComplaint(id: string, field: string, value: string) {
     await fetch("/api/complaints/update", {
       method: "POST",
       body: JSON.stringify({
         id,
         [field]: value,
+      }),
+    });
+
+    window.location.reload();
+  }
+
+  async function acceptComplaint(id: string) {
+    await fetch("/api/complaints/update", {
+      method: "POST",
+      body: JSON.stringify({
+        id,
+        action: "accept",
       }),
     });
 
@@ -194,14 +235,20 @@ export default function MemberDashboard({
                     <th className="px-3 py-2">Description</th>
                     <th className="px-3 py-2">Photo</th>
                     <th className="px-3 py-2">User</th>
+                    <th className="px-3 py-2">Accepted By</th>
                     <th className="px-3 py-2">Date</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Priority</th>
                     <th className="px-3 py-2">Updated By</th>
+                    <th className="px-3 py-2">Accept</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visibleComplaints.map((c) => (
+                    (() => {
+                      const isAssignedMember = c.acceptedMembers.some((member) => member.id === currentUser.id);
+                      const canUpdate = c.acceptanceCount >= 2 && isAssignedMember;
+                      return (
                     <tr key={c.id} className="border-t border-border">
                       <td className="px-3 py-2">{c.place}</td>
                       <td className="px-3 py-2 align-top">
@@ -216,13 +263,32 @@ export default function MemberDashboard({
                           </a>
                         ) : "—"}
                       </td>
-                      <td className="px-3 py-2">{c.user?.name || c.user?.email}</td>
+                      <td className="px-3 py-2">
+                        <ContactReveal label={c.user?.name || c.user?.email || "Unknown"} email={c.user?.email} phone={c.user?.phone} />
+                      </td>
+                      <td className="px-3 py-2">
+                        {c.acceptanceCount >= 2 ? (
+                          <div className="space-y-1">
+                            {c.acceptedMembers.map((member) => (
+                              <ContactReveal
+                                key={member.id}
+                                label={member.name || member.email || "Member"}
+                                email={member.email}
+                                phone={member.phone}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">{c.acceptanceCount}/2 accepted</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2">{dateFormatter.format(new Date(c.createdAt))}</td>
                       <td className="px-3 py-2">
                         <select
                           value={c.status}
                           onChange={(e) => updateComplaint(c.id, "status", e.target.value)}
                           aria-label={`Update status for complaint ${c.id}`}
+                          disabled={!canUpdate}
                           className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                         >
                           <option value="Not Started">Not Started</option>
@@ -236,6 +302,7 @@ export default function MemberDashboard({
                           value={c.priority}
                           onChange={(e) => updateComplaint(c.id, "priority", e.target.value)}
                           aria-label={`Update priority for complaint ${c.id}`}
+                          disabled={!canUpdate}
                           className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                         >
                           <option value="Low">Low</option>
@@ -244,7 +311,18 @@ export default function MemberDashboard({
                         </select>
                       </td>
                       <td className="px-3 py-2">{c.updatedBy || "—"}</td>
+                      <td className="px-3 py-2">
+                        <button
+                          onClick={() => acceptComplaint(c.id)}
+                          disabled={c.acceptanceCount >= 2 || isAssignedMember}
+                          className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                        >
+                          {isAssignedMember ? "Accepted" : c.acceptanceCount >= 2 ? "Locked" : "Accept"}
+                        </button>
+                      </td>
                     </tr>
+                      );
+                    })()
                   ))}
                 </tbody>
               </table>

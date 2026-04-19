@@ -27,7 +27,22 @@ export default async function MemberPage({
   }
 
   const complaints = await prisma.complaint.findMany({
-    include: { user: true },
+    include: {
+      user: true,
+      acceptances: {
+        include: {
+          member: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -54,7 +69,14 @@ export default async function MemberPage({
         createdAt: c.createdAt.toISOString(),
         updatedBy: c.updatedBy,
         userId: c.userId,
-        user: c.user ? { name: c.user.name, email: c.user.email } : null,
+        user: c.user ? { name: c.user.name, email: c.user.email, phone: c.user.phone } : null,
+        acceptanceCount: c.acceptances.length,
+        acceptedMembers: c.acceptances.map((acceptance) => ({
+          id: acceptance.member.id,
+          name: acceptance.member.name,
+          email: acceptance.member.email,
+          phone: acceptance.member.phone,
+        })),
       }))}
       events={events.map((e) => ({
         id: e.id,
