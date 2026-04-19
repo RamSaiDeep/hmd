@@ -26,7 +26,13 @@ export async function POST() {
 
     const syncedUser = await prisma.user.upsert({
       where: { id: user.id },
-      update: userData,
+      update: {
+        email: userData.email,
+        name: userData.name,
+        phone: userData.phone,
+        room: userData.room,
+        emailVerified: userData.emailVerified,
+      },
       create: userData,
     });
 

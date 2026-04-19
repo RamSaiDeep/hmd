@@ -38,7 +38,6 @@ export async function POST() {
         name: user.user_metadata?.name ?? null,
         phone: user.user_metadata?.phone ?? null,
         room: user.user_metadata?.room ?? null,
-        role: user.user_metadata?.role ?? "user",
         emailVerified: user.email_confirmed_at ? new Date(user.email_confirmed_at) : null,
       },
       create: {
