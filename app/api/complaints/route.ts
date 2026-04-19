@@ -22,12 +22,44 @@ export async function GET(request: NextRequest) {
         where: {
           userId: dbUser.id,
         },
+        include: {
+          acceptances: {
+            include: {
+              member: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phone: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
         orderBy: {
           createdAt: "desc",
         },
       });
 
-      return createSecureResponse({ complaints });
+      return createSecureResponse({
+        complaints: complaints.map((complaint) => {
+          const acceptanceCount = complaint.acceptances.length;
+          return {
+            ...complaint,
+            acceptanceCount,
+            acceptedMembers:
+              acceptanceCount >= 2
+                ? complaint.acceptances.map((acceptance) => ({
+                    id: acceptance.member.id,
+                    name: acceptance.member.name,
+                    email: acceptance.member.email,
+                    phone: acceptance.member.phone,
+                  }))
+                : [],
+          };
+        }),
+      });
 
     } catch (error) {
       console.error("GET /complaints error:", error);

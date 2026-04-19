@@ -6,7 +6,6 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import type { Complaint } from "@prisma/client";
 import type { User } from "@supabase/supabase-js";
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -17,7 +16,26 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [complaints, setComplaints] = useState<
+    Array<{
+      id: string;
+      place: string;
+      issueType: string;
+      issueDetail?: string | null;
+      description?: string | null;
+      photoUrl?: string | null;
+      status: string;
+      priority: string;
+      createdAt: string;
+      acceptanceCount: number;
+      acceptedMembers: Array<{
+        id: string;
+        name?: string | null;
+        email?: string | null;
+        phone?: string | null;
+      }>;
+    }>
+  >([]);
   const [musicRequests, setMusicRequests] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string>("user");
   const [loading, setLoading] = useState(true);
@@ -146,6 +164,26 @@ export default function DashboardPage() {
   const userName = user.user_metadata?.name ?? user.email;
   const userRoom = user.user_metadata?.room ?? "";
 
+  function ContactReveal({
+    label,
+    email,
+    phone,
+  }: {
+    label: string;
+    email?: string | null;
+    phone?: string | null;
+  }) {
+    return (
+      <details>
+        <summary className="cursor-pointer text-blue-600 hover:underline">{label}</summary>
+        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+          <div>Email: {email || "—"}</div>
+          <div>Phone: {phone || "—"}</div>
+        </div>
+      </details>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="flex items-start justify-between gap-4">
@@ -198,6 +236,7 @@ export default function DashboardPage() {
                   <TableHead>Photo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Priority</TableHead>
+                  <TableHead>Accepted By</TableHead>
                   <TableHead>Date</TableHead>
                 </TableRow>
               </TableHeader>
@@ -221,6 +260,22 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell>{c.status}</TableCell>
                     <TableCell>{c.priority}</TableCell>
+                    <TableCell>
+                      {c.acceptanceCount >= 2 ? (
+                        <div className="space-y-1">
+                          {c.acceptedMembers.map((member) => (
+                            <ContactReveal
+                              key={member.id}
+                              label={member.name || member.email || "Member"}
+                              email={member.email}
+                              phone={member.phone}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{c.acceptanceCount}/2 accepted</span>
+                      )}
+                    </TableCell>
                     <TableCell>{dateFormatter.format(new Date(c.createdAt))}</TableCell>
                   </TableRow>
                 ))}

@@ -26,9 +26,18 @@ type ComplaintItem = {
   updatedBy?: string | null;
   userId: string;
   user?: {
+    id?: string;
     name?: string | null;
     email?: string | null;
+    phone?: string | null;
   } | null;
+  acceptanceCount: number;
+  acceptedMembers: Array<{
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  }>;
 };
 
 type EventItem = {
@@ -63,6 +72,7 @@ type MusicRequestItem = {
   user?: {
     name?: string | null;
     email?: string | null;
+    phone?: string | null;
   } | null;
   createdAt: string;
 };
@@ -128,6 +138,26 @@ export default function AdminDashboard({
   });
 
   const router = useRouter();
+
+  function ContactReveal({
+    label,
+    email,
+    phone,
+  }: {
+    label: string;
+    email?: string | null;
+    phone?: string | null;
+  }) {
+    return (
+      <details>
+        <summary className="cursor-pointer text-blue-600 hover:underline">{label}</summary>
+        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+          <div>Email: {email || "—"}</div>
+          <div>Phone: {phone || "—"}</div>
+        </div>
+      </details>
+    );
+  }
 
   // Auto-refresh data from Server Component periodically
   useEffect(() => {
@@ -483,6 +513,7 @@ export default function AdminDashboard({
                   <th className="px-3 py-2">Description</th>
                   <th className="px-3 py-2">Photo</th>
                   <th className="px-3 py-2">User</th>
+                  <th className="px-3 py-2">Accepted By (Live)</th>
                   <th className="px-3 py-2">Date</th>
                   <th className="px-3 py-2">Status</th>
                   <th className="px-3 py-2">Priority</th>
@@ -506,7 +537,26 @@ export default function AdminDashboard({
                         </a>
                       ) : "—"}
                     </td>
-                    <td className="px-3 py-2">{c.user?.name || c.user?.email}</td>
+                    <td className="px-3 py-2">
+                      <ContactReveal label={c.user?.name || c.user?.email || "Unknown"} email={c.user?.email} phone={c.user?.phone} />
+                    </td>
+                    <td className="px-3 py-2">
+                      {c.acceptedMembers.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">0/2 accepted</span>
+                      ) : (
+                        <div className="space-y-1">
+                          {c.acceptedMembers.map((member) => (
+                            <ContactReveal
+                              key={member.id}
+                              label={member.name || member.email || "Member"}
+                              email={member.email}
+                              phone={member.phone}
+                            />
+                          ))}
+                          <div className="text-xs text-muted-foreground">{c.acceptanceCount}/2 accepted</div>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-3 py-2">{dateFormatter.format(new Date(c.createdAt))}</td>
                     <td className="px-3 py-2">
                       <select
@@ -606,7 +656,13 @@ export default function AdminDashboard({
                 {localMusicRequests.map((music) => (
                   <tr key={music.id} className="border-t border-border">
                     <td className="px-3 py-2 font-medium">{music.eventName}</td>
-                    <td className="px-3 py-2">{getUserName(music)}</td>
+                    <td className="px-3 py-2">
+                      <ContactReveal
+                        label={getUserName(music)}
+                        email={music.user?.email || music.organizer}
+                        phone={music.user?.phone}
+                      />
+                    </td>
                     <td className="px-3 py-2">{music.organizer}</td>
                     <td className="px-3 py-2">
                       <div className={music.alternativeDate ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>

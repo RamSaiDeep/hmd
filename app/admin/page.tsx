@@ -21,7 +21,25 @@ export default async function AdminPage() {
   }
 
   const [complaints, events, musicRequests, users] = await Promise.all([
-    prisma.complaint.findMany({ include: { user: true }, orderBy: { createdAt: "desc" } }),
+    prisma.complaint.findMany({
+      include: {
+        user: true,
+        acceptances: {
+          include: {
+            member: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
     prisma.eventRequest.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.musicRequest.findMany({ 
       orderBy: { createdAt: "desc" },
@@ -29,7 +47,8 @@ export default async function AdminPage() {
         user: {
           select: {
             name: true,
-            email: true
+            email: true,
+            phone: true,
           }
         }
       }
@@ -51,7 +70,14 @@ export default async function AdminPage() {
         createdAt: c.createdAt.toISOString(),
         updatedBy: c.updatedBy,
         userId: c.userId,
-        user: c.user ? { name: c.user.name, email: c.user.email } : null,
+        user: c.user ? { name: c.user.name, email: c.user.email, phone: c.user.phone } : null,
+        acceptanceCount: c.acceptances.length,
+        acceptedMembers: c.acceptances.map((acceptance) => ({
+          id: acceptance.member.id,
+          name: acceptance.member.name,
+          email: acceptance.member.email,
+          phone: acceptance.member.phone,
+        })),
       }))}
       events={events.map((e) => ({
         id: e.id,
@@ -81,7 +107,7 @@ export default async function AdminPage() {
         alternativeSoundItems: m.alternativeSoundItems,
         alternativeLighting: m.alternativeLighting,
         alternativeNotes: m.alternativeNotes,
-        user: m.user ? { name: m.user.name, email: m.user.email } : null,
+        user: m.user ? { name: m.user.name, email: m.user.email, phone: m.user.phone } : null,
         createdAt: m.createdAt.toISOString(),
       }))}
       users={users.map((u) => ({

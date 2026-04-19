@@ -30,6 +30,7 @@ model User {
   complaints    Complaint[]
   bookings      StudioBooking[]
   musicRequests MusicRequest[]
+  acceptedComplaints ComplaintAcceptance[]
 
   @@index([email])
 }
@@ -93,8 +94,23 @@ model Complaint {
   updatedBy   String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acceptances ComplaintAcceptance[]
 
   @@index([userId])
+}
+
+model ComplaintAcceptance {
+  id          String    @id @default(uuid())
+  complaintId String
+  memberId    String
+  createdAt   DateTime  @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  member    User      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([complaintId, memberId])
+  @@index([complaintId])
+  @@index([memberId])
 }
 
 //////////////////////////////////////////////////////
