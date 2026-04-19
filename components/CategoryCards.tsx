@@ -2,7 +2,7 @@
 const categories = [
   { label: "Music Programs", icon: "🎵", href: "/category/music-programs", color: "from-blue-600/30" },
   { label: "SRDRS Recording Studio", icon: "🎙️", href: null, color: "from-purple-600/30" },
-  { label: "Events Program", icon: "🏠", href: "/category/events", color: "from-emerald-600/30" },
+  { label: "Events - Support", icon: "🏠", href: "/category/events", color: "from-emerald-600/30" },
 ];
 
 export default function CategoryCards() {
