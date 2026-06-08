@@ -60,6 +60,15 @@ export default function RegisterComplaint() {
     }
   }
 
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
   async function handleSubmit() {
     if (!place.trim()) {
       setError("Room/Place is required.");
@@ -80,6 +89,11 @@ export default function RegisterComplaint() {
     setError("");
 
     try {
+      let photoUrl = "";
+      if (photo) {
+        photoUrl = await fileToBase64(photo);
+      }
+
       const res = await fetch("/api/complaints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,6 +102,7 @@ export default function RegisterComplaint() {
           issueType,
           issueDetail: issueType === "Other" ? issueDetail : "",
           description,
+          photoUrl: photoUrl || undefined,
         }),
       });
 

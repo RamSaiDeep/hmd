@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { canAccessAdminPanel } from "@/lib/roles";
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
-    if (!dbUser || dbUser.role !== "admin") {
+    if (!dbUser || !canAccessAdminPanel(dbUser.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

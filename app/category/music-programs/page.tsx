@@ -45,10 +45,10 @@ export default function MusicPrograms() {
   async function handleSubmit() {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     // Clear any previous errors
     setError("");
-    
+
     // Validation
     if (!eventName.trim()) {
       setError("Error: Event name is required");
@@ -66,7 +66,7 @@ export default function MusicPrograms() {
       setError("Error: Please add at least one sound requirement");
       return;
     }
-    
+
     // Build request data
     const requestData = {
       eventName,
@@ -131,7 +131,7 @@ export default function MusicPrograms() {
               <div className="text-5xl mb-4">✅</div>
               <h2 className="text-xl font-bold text-foreground mb-2">Request Submitted!</h2>
               <p className="text-muted-foreground text-sm mb-6">Our team will review and get back to you.</p>
-              <button 
+              <button
                 onClick={handleReset}
                 className="bg-primary hover:bg-primary/90 px-6 py-3 rounded-xl font-semibold text-primary-foreground"
               >
@@ -154,7 +154,7 @@ export default function MusicPrograms() {
                   type="text"
                   value={eventName}
                   onChange={(e) => setEventName(e.target.value)}
-                  placeholder="e.g. Rock Night, Classical Evening"
+                  placeholder="e.g. Sas-e-dil"
                   className="rounded-xl px-4 py-3 text-sm text-foreground border bg-background focus:outline-none focus:border-primary transition"
                 />
               </div>
@@ -202,7 +202,7 @@ export default function MusicPrograms() {
                   type="text"
                   value={venue}
                   onChange={(e) => setVenue(e.target.value)}
-                  placeholder="e.g. SAC auditorium, Open air theatre"
+                  placeholder="e.g. Auditorium, Hostel Quadrangle"
                   className="rounded-xl px-4 py-3 text-sm text-foreground border bg-background focus:outline-none focus:border-primary transition"
                 />
               </div>
@@ -245,7 +245,7 @@ export default function MusicPrograms() {
                           </td>
                           <td className="px-2 py-2">
                             {soundRows.length > 1 && (
-                              <button 
+                              <button
                                 onClick={() => removeSoundRow(index)}
                                 className="text-destructive hover:text-destructive/80 text-sm"
                               >
@@ -258,7 +258,7 @@ export default function MusicPrograms() {
                     </tbody>
                   </table>
                 </div>
-                <button 
+                <button
                   onClick={addSoundRow}
                   className="text-primary hover:text-primary/80 text-sm text-left"
                 >
@@ -310,7 +310,7 @@ export default function MusicPrograms() {
                 />
               </div>
 
-              <button 
+              <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="bg-primary hover:bg-primary/90 py-3 rounded-xl font-semibold text-primary-foreground w-full disabled:opacity-70 disabled:cursor-not-allowed"

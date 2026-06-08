@@ -8,13 +8,17 @@ import type { User } from "@supabase/supabase-js";
 import { AudioLines, Mic, Speaker, Wrench } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  getNavLinks,
+  getRoleMenuLabel,
+  parseUserRole,
+  type UserRole,
+} from "@/lib/roles";
 
 type NavLink = {
   href: string;
   label: string;
 };
-
-type UserRole = "user" | "member" | "admin";
 
 export default function NavbarWrapper() {
   const [user, setUser] = useState<User | null>(null);
@@ -35,7 +39,7 @@ export default function NavbarWrapper() {
         }
 
         const data = (await response.json()) as { role?: string };
-        setUserRole(data.role === "admin" || data.role === "member" ? data.role : "user");
+        setUserRole(parseUserRole(data.role));
       } catch {
         setUserRole("user");
       }
@@ -96,20 +100,7 @@ export default function NavbarWrapper() {
   }
 
   const userName = user?.user_metadata?.name ?? user?.email ?? "";
-  const navLinks: NavLink[] =
-    userRole === "admin"
-      ? [
-          { href: "/dashboard", label: "My Dashboard" },
-          { href: "/admin", label: "Admin Panel" },
-        ]
-      : userRole === "member"
-      ? [
-          { href: "/dashboard", label: "My Dashboard" },
-          { href: "/member", label: "Member Dashboard" },
-        ]
-      : [
-          { href: "/dashboard", label: "My Dashboard" },
-        ];
+  const navLinks: NavLink[] = getNavLinks(userRole);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -166,7 +157,7 @@ export default function NavbarWrapper() {
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-lg">
                   <div className="px-3 py-2 rounded-lg bg-muted text-muted-foreground text-xs font-semibold">
-                    {userRole === "admin" ? "🔴 Admin" : userRole === "member" ? "🔵 Member" : "⚪ User"}
+                    {getRoleMenuLabel(userRole)}
                   </div>
 
                   {navLinks.length > 0 && (

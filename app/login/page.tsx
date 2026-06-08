@@ -30,6 +30,14 @@ function LoginContent() {
   const googleClass =
     "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground hover:border-primary/60";
 
+  async function syncUserToDatabase() {
+    const response = await fetch("/api/auth/sync-user", { method: "POST" });
+    if (!response.ok) {
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error || "Failed to save your profile. Please try again.");
+    }
+  }
+
   // 🔥 LOGIN
   async function handleLogin() {
     setLoading(true);
@@ -46,11 +54,14 @@ function LoginContent() {
       return;
     }
 
-    // ✅ Sync user to Prisma
-    await fetch("/api/auth/sync-user", { method: "POST" });
-
-    router.push("/dashboard");
-    router.refresh();
+    try {
+      await syncUserToDatabase();
+      router.push("/dashboard");
+      router.refresh();
+    } catch (syncError) {
+      setError(syncError instanceof Error ? syncError.message : "Failed to sync account");
+      setLoading(false);
+    }
   }
 
   // 🔥 SIGNUP
@@ -77,14 +88,14 @@ function LoginContent() {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          name,
-          phone,
-          room,
+          name: name.trim(),
+          phone: phone.trim(),
+          room: room.trim(),
           role: "user",
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -93,15 +104,24 @@ function LoginContent() {
 
     if (error) {
       setError(error.message);
-    } else {
-      setSuccess("Account created! Please verify your email.");
-
-      // ⏳ Delay ensures session is available
-      setTimeout(async () => {
-        await fetch("/api/auth/sync-user", { method: "POST" });
-      }, 1000);
+      setLoading(false);
+      return;
     }
 
+    if (data.session) {
+      try {
+        await syncUserToDatabase();
+        router.push("/dashboard");
+        router.refresh();
+        return;
+      } catch (syncError) {
+        setError(syncError instanceof Error ? syncError.message : "Failed to sync account");
+        setLoading(false);
+        return;
+      }
+    }
+
+    setSuccess("Account created! Please verify your email, then log in.");
     setLoading(false);
   }
 

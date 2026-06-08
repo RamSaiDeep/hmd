@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
             issueType?: string;
             issueDetail?: string;
             description?: string;
+            photoUrl?: string;
           }
         | null;
 
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
       const issueType = body?.issueType?.trim() ?? "";
       const issueDetail = (body?.issueDetail ?? "").trim();
       const description = (body?.description ?? "").trim();
+      const photoUrl = body?.photoUrl ?? null;
 
       if (!place || !issueType) {
         return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -126,6 +128,7 @@ export async function POST(request: NextRequest) {
           issueType,
           issueDetail: issueDetail.length ? issueDetail : null,
           description: description.length ? description : null,
+          photoUrl: photoUrl,
         },
       });
 

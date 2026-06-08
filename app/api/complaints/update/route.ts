@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { canAccessAdminPanel, canAccessMemberDashboard } from "@/lib/roles";
 
 const allowedStatuses = ["Not Started", "In Progress", "Finished", "Invalid Request"];
 const allowedPriorities = ["Low", "Medium", "High"];
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       where: { email: user.email! },
     });
 
-    if (!dbUser || (dbUser.role !== "member" && dbUser.role !== "admin")) {
+    if (!dbUser || !canAccessMemberDashboard(dbUser.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "accept") {
-      if (dbUser.role !== "member" && dbUser.role !== "admin") {
+      if (!canAccessMemberDashboard(dbUser.role)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
@@ -87,12 +88,13 @@ export async function POST(request: Request) {
 
     const acceptedMemberIds = complaint.acceptances.map((acceptance) => acceptance.memberId);
     const isAcceptedMember = acceptedMemberIds.includes(dbUser.id);
+    const isAdminLike = canAccessAdminPanel(dbUser.role);
 
-    if (dbUser.role !== "admin" && !isAcceptedMember) {
+    if (!isAdminLike && !isAcceptedMember) {
       return NextResponse.json({ error: "Only assigned members can update this complaint" }, { status: 403 });
     }
 
-    if (dbUser.role !== "admin" && complaint.acceptances.length < 2) {
+    if (!isAdminLike && complaint.acceptances.length < 2) {
       return NextResponse.json({ error: "Complaint needs two accepting members before updates" }, { status: 400 });
     }
 

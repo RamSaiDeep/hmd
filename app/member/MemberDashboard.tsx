@@ -3,7 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
-type MemberView = "all" | "mine" | "events";
+type MemberView = "all" | "mine" | "events" | "music" | "studio";
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "2-digit",
@@ -46,6 +46,39 @@ type EventItem = {
   departments: string[];
   status: string;
   memberResponse?: string | null;
+  acceptanceCount: number;
+  acceptedMembers: Array<{ id: string; name?: string | null; email?: string | null; phone?: string | null; }>;
+};
+
+type MusicItem = {
+  id: string;
+  eventName: string;
+  organizer: string;
+  eventDate: string;
+  eventTime?: string | null;
+  venue: string;
+  soundItems: any;
+  needsLight: boolean;
+  lighting: string[];
+  notes?: string | null;
+  status: string;
+  user?: { name?: string | null; email?: string | null; phone?: string | null; } | null;
+  createdAt: string;
+  acceptanceCount: number;
+  acceptedMembers: Array<{ id: string; name?: string | null; email?: string | null; phone?: string | null; }>;
+};
+
+type StudioItem = {
+  id: string;
+  day: string;
+  slot: string;
+  purpose: string;
+  description: string;
+  status: string;
+  user?: { name?: string | null; email?: string | null; phone?: string | null; } | null;
+  createdAt: string;
+  acceptanceCount: number;
+  acceptedMembers: Array<{ id: string; name?: string | null; email?: string | null; phone?: string | null; }>;
 };
 
 const statusOptions = ["ALL", "Not Started", "In Progress", "Finished", "Invalid Request"];
@@ -54,20 +87,31 @@ const priorityOptions = ["ALL", "Low", "Medium", "High"];
 export default function MemberDashboard({
   complaints,
   events,
+  musicRequests = [],
+  studioBookings = [],
+  settings,
   currentUser,
   initialView = "all",
 }: {
   complaints: ComplaintItem[];
   events: EventItem[];
+  musicRequests?: MusicItem[];
+  studioBookings?: StudioItem[];
+  settings: Record<string, string>;
   currentUser: { id: string };
   initialView?: MemberView;
 }) {
+  const compLimit = parseInt(settings.COMPLAINT_ACCEPTANCE_LIMIT || "2", 10);
+  const musicLimit = parseInt(settings.MUSIC_ACCEPTANCE_LIMIT || "5", 10);
+  const eventLimit = parseInt(settings.EVENT_ACCEPTANCE_LIMIT || "5", 10);
+  const studioLimit = parseInt(settings.STUDIO_ACCEPTANCE_LIMIT || "2", 10);
   const [view, setView] = useState<MemberView>(initialView);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
   const [searchText, setSearchText] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   function ContactReveal({
     label,
@@ -101,12 +145,12 @@ export default function MemberDashboard({
     window.location.reload();
   }
 
-  async function acceptComplaint(id: string) {
-    await fetch("/api/complaints/update", {
+  async function acceptRequest(id: string, type: "complaint" | "event" | "music" | "studio") {
+    await fetch("/api/accept", {
       method: "POST",
       body: JSON.stringify({
         id,
-        action: "accept",
+        type,
       }),
     });
 
@@ -151,6 +195,8 @@ export default function MemberDashboard({
           { key: "all", label: `All Complaints (${complaints.length})` },
           { key: "mine", label: `My Complaints (${complaints.filter((c) => c.userId === currentUser.id).length})` },
           { key: "events", label: `Event Requests (${events.length})` },
+          { key: "music", label: `Music Requests (${musicRequests.length})` },
+          { key: "studio", label: `SRDRS Bookings (${studioBookings.length})` },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -247,7 +293,7 @@ export default function MemberDashboard({
                   {visibleComplaints.map((c) => (
                     (() => {
                       const isAssignedMember = c.acceptedMembers.some((member) => member.id === currentUser.id);
-                      const canUpdate = c.acceptanceCount >= 2 && isAssignedMember;
+                      const canUpdate = c.acceptanceCount >= compLimit && isAssignedMember;
                       return (
                     <tr key={c.id} className="border-t border-border">
                       <td className="px-3 py-2">{c.place}</td>
@@ -258,16 +304,19 @@ export default function MemberDashboard({
                       <td className="px-3 py-2 align-top whitespace-pre-wrap max-w-xs">{c.description || "—"}</td>
                       <td className="px-3 py-2 align-top">
                         {c.photoUrl ? (
-                          <a href={c.photoUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                          <button
+                            onClick={() => setSelectedImage(c.photoUrl!)}
+                            className="text-blue-500 hover:underline"
+                          >
                             View
-                          </a>
+                          </button>
                         ) : "—"}
                       </td>
                       <td className="px-3 py-2">
                         <ContactReveal label={c.user?.name || c.user?.email || "Unknown"} email={c.user?.email} phone={c.user?.phone} />
                       </td>
                       <td className="px-3 py-2">
-                        {c.acceptanceCount >= 2 ? (
+                        {c.acceptanceCount >= compLimit && isAssignedMember ? (
                           <div className="space-y-1">
                             {c.acceptedMembers.map((member) => (
                               <ContactReveal
@@ -279,7 +328,7 @@ export default function MemberDashboard({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground">{c.acceptanceCount}/2 accepted</span>
+                          <span className="text-xs text-muted-foreground">{c.acceptanceCount}/{compLimit} accepted</span>
                         )}
                       </td>
                       <td className="px-3 py-2">{dateFormatter.format(new Date(c.createdAt))}</td>
@@ -313,11 +362,11 @@ export default function MemberDashboard({
                       <td className="px-3 py-2">{c.updatedBy || "—"}</td>
                       <td className="px-3 py-2">
                         <button
-                          onClick={() => acceptComplaint(c.id)}
-                          disabled={c.acceptanceCount >= 2 || isAssignedMember}
+                          onClick={() => acceptRequest(c.id, "complaint")}
+                          disabled={c.acceptanceCount >= compLimit || isAssignedMember}
                           className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
                         >
-                          {isAssignedMember ? "Accepted" : c.acceptanceCount >= 2 ? "Locked" : "Accept"}
+                          {isAssignedMember ? "Accepted" : c.acceptanceCount >= compLimit ? "Locked" : "Accept"}
                         </button>
                       </td>
                     </tr>
@@ -348,6 +397,7 @@ export default function MemberDashboard({
                     <th className="px-3 py-2">Departments</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Response</th>
+                    <th className="px-3 py-2">Accepted By</th>
                     <th className="px-3 py-2">Action</th>
                   </tr>
                 </thead>
@@ -362,6 +412,29 @@ export default function MemberDashboard({
                         <td className="px-3 py-2">{e.status}</td>
                         <td className="px-3 py-2">{e.memberResponse || "No response yet"}</td>
                         <td className="px-3 py-2">
+                          {e.acceptanceCount >= eventLimit ? (
+                            <div className="space-y-1">
+                              {e.acceptedMembers.map((member) => (
+                                <ContactReveal
+                                  key={member.id}
+                                  label={member.name || member.email || "Member"}
+                                  email={member.email}
+                                  phone={member.phone}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{e.acceptanceCount}/{eventLimit} accepted</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 flex gap-1">
+                          <button
+                            onClick={() => acceptRequest(e.id, "event")}
+                            disabled={e.acceptanceCount >= eventLimit || e.acceptedMembers.some((m) => m.id === currentUser.id)}
+                            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                          >
+                            {e.acceptedMembers.some((m) => m.id === currentUser.id) ? "Accepted" : e.acceptanceCount >= eventLimit ? "Locked" : "Accept"}
+                          </button>
                           <button
                             onClick={() => {
                               if (respondingId === e.id) {
@@ -404,6 +477,168 @@ export default function MemberDashboard({
             </div>
           )}
         </section>
+      )}
+
+      {view === "music" && (
+        <section className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-card-foreground">Music Requests ({musicRequests.length})</h2>
+
+          {musicRequests.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">No music requests found.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="px-3 py-2">Event</th>
+                    <th className="px-3 py-2">User</th>
+                    <th className="px-3 py-2">Organizer</th>
+                    <th className="px-3 py-2">Date</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Accepted By</th>
+                    <th className="px-3 py-2">Accept</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {musicRequests.map((m) => {
+                    const isAssigned = m.acceptedMembers.some((member) => member.id === currentUser.id);
+                    return (
+                      <tr key={m.id} className="border-t border-border">
+                        <td className="px-3 py-2 font-medium">{m.eventName}</td>
+                        <td className="px-3 py-2">
+                          <ContactReveal
+                            label={m.user?.name || m.user?.email || "Unknown"}
+                            email={m.user?.email}
+                            phone={m.user?.phone}
+                          />
+                        </td>
+                        <td className="px-3 py-2">{m.organizer}</td>
+                        <td className="px-3 py-2">{m.eventDate}</td>
+                        <td className="px-3 py-2">{m.status}</td>
+                        <td className="px-3 py-2">
+                          {m.acceptanceCount >= musicLimit ? (
+                            <div className="space-y-1">
+                              {m.acceptedMembers.map((member) => (
+                                <ContactReveal
+                                  key={member.id}
+                                  label={member.name || member.email || "Member"}
+                                  email={member.email}
+                                  phone={member.phone}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{m.acceptanceCount}/{musicLimit} accepted</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => acceptRequest(m.id, "music")}
+                            disabled={m.acceptanceCount >= musicLimit || isAssigned}
+                            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                          >
+                            {isAssigned ? "Accepted" : m.acceptanceCount >= musicLimit ? "Locked" : "Accept"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {view === "studio" && (
+        <section className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-card-foreground">SRDRS Bookings ({studioBookings.length})</h2>
+
+          {studioBookings.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">No bookings found.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="px-3 py-2">Day & Slot</th>
+                    <th className="px-3 py-2">Purpose</th>
+                    <th className="px-3 py-2">User</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Accepted By</th>
+                    <th className="px-3 py-2">Accept</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studioBookings.map((s) => {
+                    const isAssigned = s.acceptedMembers.some((member) => member.id === currentUser.id);
+                    return (
+                      <tr key={s.id} className="border-t border-border">
+                        <td className="px-3 py-2 font-medium">{s.day} <br/><span className="text-xs text-muted-foreground">{s.slot}</span></td>
+                        <td className="px-3 py-2">{s.purpose}</td>
+                        <td className="px-3 py-2">
+                          <ContactReveal
+                            label={s.user?.name || s.user?.email || "Unknown"}
+                            email={s.user?.email}
+                            phone={s.user?.phone}
+                          />
+                        </td>
+                        <td className="px-3 py-2">{s.status}</td>
+                        <td className="px-3 py-2">
+                          {s.acceptanceCount >= studioLimit ? (
+                            <div className="space-y-1">
+                              {s.acceptedMembers.map((member) => (
+                                <ContactReveal
+                                  key={member.id}
+                                  label={member.name || member.email || "Member"}
+                                  email={member.email}
+                                  phone={member.phone}
+                                />
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{s.acceptanceCount}/{studioLimit} accepted</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => acceptRequest(s.id, "studio")}
+                            disabled={s.acceptanceCount >= studioLimit || isAssigned}
+                            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                          >
+                            {isAssigned ? "Accepted" : s.acceptanceCount >= studioLimit ? "Locked" : "Accept"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-h-full max-w-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -right-4 -top-4 rounded-full bg-background p-1 text-foreground shadow-md hover:bg-muted"
+            >
+              ✕
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedImage}
+              alt="Complaint attached photo"
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain bg-white"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

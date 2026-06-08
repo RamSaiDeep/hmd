@@ -3,8 +3,18 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import {
+  ASSIGNABLE_ROLES,
+  canAssignRole,
+  canDeleteUser,
+  getRoleLabel,
+  parseUserRole,
+  type UserRole,
+} from "@/lib/roles";
+import SettingsTab from "@/components/SettingsTab";
+import AssignModal from "@/components/AssignModal";
 
-type AdminView = "complaints" | "events" | "music" | "users";
+type AdminView = "complaints" | "events" | "music" | "users" | "settings";
 type ComplaintScope = "all" | "mine";
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -100,7 +110,7 @@ export default function AdminDashboard({
   events: EventItem[];
   musicRequests: MusicRequestItem[];
   users: UserItem[];
-  currentUser: { id: string };
+  currentUser: { id: string; role: string };
 }) {
   const [view, setView] = useState<AdminView>("complaints");
   const [scope, setScope] = useState<ComplaintScope>("all");
@@ -112,6 +122,9 @@ export default function AdminDashboard({
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const [deletingMusicId, setDeletingMusicId] = useState<string | null>(null);
   const [updatingMusicId, setUpdatingMusicId] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<{ id: string; type: "complaint" | "event" | "music" | "studio" } | null>(null);
   
   // Local state for optimistic updates
   const [localComplaints, setLocalComplaints] = useState(complaints);
@@ -239,25 +252,27 @@ export default function AdminDashboard({
     }
   }
 
-  async function updateUserRole(id: string, role: "user" | "member") {
+  async function updateUserRole(id: string, role: UserRole) {
     setUpdatingRoleUserId(id);
-    
-    // Optimistic update
-    setLocalUsers(prev => 
-      prev.map(u => u.id === id ? { ...u, role } : u)
-    );
+
+    const previous = localUsers;
+    setLocalUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)));
 
     try {
-      await fetch("/api/admin/users/role", {
+      const response = await fetch("/api/admin/users/role", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, role }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to update role");
+      }
     } catch (error) {
       console.error("Failed to update user role:", error);
-      // Revert on error
-      setLocalUsers(prev => 
-        prev.map(u => u.id === id ? { ...u, role: u.role === "member" ? "user" : "member" } : u)
-      );
+      setLocalUsers(previous);
+    } finally {
+      setUpdatingRoleUserId(null);
     }
   }
 
@@ -421,6 +436,7 @@ export default function AdminDashboard({
           { key: "events", label: `Events (${events.length})` },
           { key: "music", label: `Music Events (${localMusicRequests.length})` },
           { key: "users", label: `Users (${localUsers.length})` },
+          { key: "settings", label: `Settings` },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -532,9 +548,12 @@ export default function AdminDashboard({
                     <td className="px-3 py-2 align-top whitespace-pre-wrap max-w-xs">{c.description || "—"}</td>
                     <td className="px-3 py-2 align-top">
                       {c.photoUrl ? (
-                        <a href={c.photoUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                        <button
+                          onClick={() => setSelectedImage(c.photoUrl!)}
+                          className="text-blue-500 hover:underline"
+                        >
                           View
-                        </a>
+                        </button>
                       ) : "—"}
                     </td>
                     <td className="px-3 py-2">
@@ -585,13 +604,24 @@ export default function AdminDashboard({
                     </td>
                     <td className="px-3 py-2">{c.updatedBy || "—"}</td>
                     <td className="px-3 py-2">
-                      <button
-                        onClick={() => deleteComplaint(c.id)}
-                        disabled={deletingComplaintId === c.id}
-                        className="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-60"
-                      >
-                        {deletingComplaintId === c.id ? "Deleting..." : "Delete"}
-                      </button>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          onClick={() => {
+                            setAssignTarget({ id: c.id, type: "complaint" });
+                            setAssignModalOpen(true);
+                          }}
+                          className="rounded-md border border-primary/40 px-2 py-1 text-xs text-primary hover:bg-primary/10"
+                        >
+                          Assign
+                        </button>
+                        <button
+                          onClick={() => deleteComplaint(c.id)}
+                          disabled={deletingComplaintId === c.id}
+                          className="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                        >
+                          {deletingComplaintId === c.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -614,6 +644,7 @@ export default function AdminDashboard({
                   <th className="px-3 py-2">Departments</th>
                   <th className="px-3 py-2">Status</th>
                   <th className="px-3 py-2">Response</th>
+                  <th className="px-3 py-2">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -625,6 +656,17 @@ export default function AdminDashboard({
                     <td className="px-3 py-2">{event.departments.join(", ")}</td>
                     <td className="px-3 py-2">{event.status}</td>
                     <td className="px-3 py-2">{event.memberResponse || "No response yet"}</td>
+                    <td className="px-3 py-2">
+                      <button
+                        onClick={() => {
+                          setAssignTarget({ id: event.id, type: "event" });
+                          setAssignModalOpen(true);
+                        }}
+                        className="rounded-md border border-primary/40 px-2 py-1 text-xs text-primary hover:bg-primary/10"
+                      >
+                        Assign
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -756,7 +798,16 @@ export default function AdminDashboard({
                       </span>
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-wrap">
+                        <button
+                          onClick={() => {
+                            setAssignTarget({ id: music.id, type: "music" });
+                            setAssignModalOpen(true);
+                          }}
+                          className="rounded-md border border-primary/40 px-2 py-1 text-xs text-primary hover:bg-primary/10"
+                        >
+                          Assign
+                        </button>
                         <button
                           onClick={() => openMusicModal(music, 'accept')}
                           disabled={updatingMusicId === music.id}
@@ -818,33 +869,61 @@ export default function AdminDashboard({
                     <td className="px-3 py-2">{user.email}</td>
                     <td className="px-3 py-2">{user.room || "—"}</td>
                     <td className="px-3 py-2">{user.phone || "—"}</td>
-                    <td className="px-3 py-2 capitalize">{user.role}</td>
+                    <td className="px-3 py-2">{getRoleLabel(user.role)}</td>
                     <td className="px-3 py-2">
-                      {user.role === "admin" ? (
+                      {user.id === currentUser.id || parseUserRole(user.role) === "superuser" ? (
                         <span className="text-xs text-muted-foreground">Protected</span>
-                      ) : (
+                      ) : parseUserRole(currentUser.role) === "superuser" ? (
+                        <select
+                          value={parseUserRole(user.role)}
+                          disabled={updatingRoleUserId === user.id}
+                          onChange={(e) => updateUserRole(user.id, e.target.value as UserRole)}
+                          className="rounded-md border border-border bg-background px-2 py-1 text-xs disabled:opacity-60"
+                        >
+                          {ASSIGNABLE_ROLES.filter((role) =>
+                            canAssignRole(currentUser.role, user.role, role)
+                          ).map((role) => (
+                            <option key={role} value={role}>
+                              {getRoleLabel(role)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : canAssignRole(currentUser.role, user.role, "member") ||
+                        canAssignRole(currentUser.role, user.role, "user") ? (
                         <button
-                          onClick={() => updateUserRole(user.id, user.role === "member" ? "user" : "member")}
-                          disabled={updatingRoleUserId === user.id || user.id === currentUser.id}
+                          onClick={() =>
+                            updateUserRole(
+                              user.id,
+                              parseUserRole(user.role) === "member" ? "user" : "member"
+                            )
+                          }
+                          disabled={updatingRoleUserId === user.id}
                           className="rounded-md border border-border px-2 py-1 text-xs text-foreground hover:bg-accent disabled:opacity-60"
                         >
                           {updatingRoleUserId === user.id
                             ? "Updating..."
-                            : user.id === currentUser.id
-                            ? "Protected"
-                            : user.role === "member"
+                            : parseUserRole(user.role) === "member"
                             ? "Make User"
                             : "Make Member"}
                         </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Protected</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
                       <button
                         onClick={() => deleteUser(user.id)}
-                        disabled={deletingUserId === user.id || user.id === currentUser.id}
+                        disabled={
+                          deletingUserId === user.id ||
+                          !canDeleteUser(currentUser.role, user.role, currentUser.id, user.id)
+                        }
                         className="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-60"
                       >
-                        {deletingUserId === user.id ? "Deleting..." : user.id === currentUser.id ? "Protected" : "Delete"}
+                        {deletingUserId === user.id
+                          ? "Deleting..."
+                          : !canDeleteUser(currentUser.role, user.role, currentUser.id, user.id)
+                          ? "Protected"
+                          : "Delete"}
                       </button>
                     </td>
                   </tr>
@@ -1027,6 +1106,41 @@ export default function AdminDashboard({
                  'Offer Alternative'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {view === "settings" && <SettingsTab />}
+
+      {assignTarget && (
+        <AssignModal
+          isOpen={assignModalOpen}
+          onClose={() => setAssignModalOpen(false)}
+          requestId={assignTarget.id}
+          requestType={assignTarget.type}
+          users={localUsers}
+          onAssigned={() => window.location.reload()}
+        />
+      )}
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-h-full max-w-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -right-4 -top-4 rounded-full bg-background p-1 text-foreground shadow-md hover:bg-muted"
+            >
+              ✕
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedImage}
+              alt="Complaint attached photo"
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain bg-white"
+            />
           </div>
         </div>
       )}

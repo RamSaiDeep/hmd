@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { canAccessAdminPanel, canDeleteUser } from "@/lib/roles";
 
 export async function POST(request: Request) {
   try {
@@ -15,8 +16,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const admin = await prisma.user.findUnique({ where: { email: user.email! } });
-    if (!admin || admin.role !== "admin") {
+    const actor = await prisma.user.findUnique({ where: { email: user.email! } });
+    if (!actor || !canAccessAdminPanel(actor.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -26,8 +27,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User id is required" }, { status: 400 });
     }
 
-    if (id === admin.id) {
-      return NextResponse.json({ error: "You cannot delete your own admin account" }, { status: 400 });
+    const targetUser = await prisma.user.findUnique({ where: { id } });
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (!canDeleteUser(actor.role, targetUser.role, actor.id, targetUser.id)) {
+      return NextResponse.json({ error: "You cannot delete this user" }, { status: 403 });
     }
 
     const supabaseAdmin = createAdminClient();

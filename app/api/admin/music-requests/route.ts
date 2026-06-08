@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { canAccessAdminPanel } from "@/lib/roles";
 
 export async function GET() {
   const supabase = await createClient();
@@ -11,7 +12,7 @@ export async function GET() {
   }
 
   const admin = await prisma.user.findUnique({ where: { email: user.email! } });
-  if (!admin || admin.role !== "admin") {
+  if (!admin || !canAccessAdminPanel(admin.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -31,7 +32,7 @@ export async function PUT(request: Request) {
   }
 
   const admin = await prisma.user.findUnique({ where: { email: user.email! } });
-  if (!admin || admin.role !== "admin") {
+  if (!admin || !canAccessAdminPanel(admin.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -74,7 +75,7 @@ export async function DELETE(request: Request) {
   }
 
   const admin = await prisma.user.findUnique({ where: { email: user.email! } });
-  if (!admin || admin.role !== "admin") {
+  if (!admin || !canAccessAdminPanel(admin.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

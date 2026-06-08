@@ -19,7 +19,7 @@ model User {
   password      String?
   phone         String?
   room          String?
-  role          String    @default("user") // user, member, admin
+  role          String    @default("user") // user, member, admin, superuser
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -31,6 +31,9 @@ model User {
   bookings      StudioBooking[]
   musicRequests MusicRequest[]
   acceptedComplaints ComplaintAcceptance[]
+  acceptedEvents     EventAcceptance[]
+  acceptedMusic      MusicAcceptance[]
+  acceptedStudios    StudioAcceptance[]
 
   @@index([email])
 }
@@ -133,6 +136,22 @@ model EventRequest {
   memberResponse  String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  acceptances     EventAcceptance[]
+}
+
+model EventAcceptance {
+  id          String    @id @default(uuid())
+  eventId     String
+  memberId    String
+  createdAt   DateTime  @default(now())
+
+  event       EventRequest @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member      User         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, memberId])
+  @@index([eventId])
+  @@index([memberId])
 }
 
 //////////////////////////////////////////////////////
@@ -164,8 +183,23 @@ model MusicRequest {
   updatedAt     DateTime @updatedAt
 
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acceptances MusicAcceptance[]
 
   @@index([userId])
+}
+
+model MusicAcceptance {
+  id          String    @id @default(uuid())
+  musicId     String
+  memberId    String
+  createdAt   DateTime  @default(now())
+
+  music       MusicRequest @relation(fields: [musicId], references: [id], onDelete: Cascade)
+  member      User         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([musicId, memberId])
+  @@index([musicId])
+  @@index([memberId])
 }
 
 //////////////////////////////////////////////////////
@@ -184,6 +218,30 @@ model StudioBooking {
   updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acceptances StudioAcceptance[]
 
   @@index([userId])
+}
+
+model StudioAcceptance {
+  id          String    @id @default(uuid())
+  bookingId   String
+  memberId    String
+  createdAt   DateTime  @default(now())
+
+  booking     StudioBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  member      User          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, memberId])
+  @@index([bookingId])
+  @@index([memberId])
+}
+
+//////////////////////////////////////////////////////
+// SETTINGS
+//////////////////////////////////////////////////////
+
+model SystemSetting {
+  key   String @id
+  value String
 }

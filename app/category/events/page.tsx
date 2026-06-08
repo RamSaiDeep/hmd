@@ -56,7 +56,11 @@ export default function Events() {
     );
   }
 
-  function handleSubmit() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (isSubmitting) return;
+    
     // Basic validation
     if (!eventName.trim()) {
       setError("Error: Event name is required");
@@ -67,23 +71,46 @@ export default function Events() {
       return;
     }
 
-    // Clear error and submit
+    setIsSubmitting(true);
     setError("");
-    console.log("Event request submitted:", {
+
+    const departments = [];
+    if (needsSound) departments.push("Dhwani");
+    if (needsLight) departments.push("Prakash");
+    if (decorations.length > 0) departments.push("Kriti");
+
+    const requestData = {
       eventName,
       organizerName,
       eventDate,
       eventTime,
       venue,
-      description,
-      needsSound,
-      needsLight,
-      decorations,
-      lighting,
-      soundRows: needsSound ? soundRows : [],
-    });
+      departments,
+      dhwaniItems: needsSound ? soundRows : [],
+      prakashVenue: needsLight ? venue : "",
+      prakashLighting: needsLight ? lighting : [],
+      kritiNeeds: decorations.join(", "),
+      notes: description,
+    };
 
-    setSubmitted(true);
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to submit request");
+      }
+
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function handleReset() {
@@ -355,9 +382,10 @@ export default function Events() {
               <div className="pt-6">
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  disabled={isSubmitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Submit Request →
+                  {isSubmitting ? "Submitting..." : "Submit Request →"}
                 </button>
               </div>
             </form>

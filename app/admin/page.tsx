@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { canAccessAdminPanel } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import AdminDashboard from "./AdminDashboard";
 
@@ -16,7 +17,7 @@ export default async function AdminPage() {
     where: { email: user.email! },
   });
 
-  if (!dbUser || dbUser.role !== "admin") {
+  if (!dbUser || !canAccessAdminPanel(dbUser.role)) {
     return <h1>Access Denied 🚫</h1>;
   }
 
@@ -118,7 +119,7 @@ export default async function AdminPage() {
         phone: u.phone,
         role: u.role,
       }))}
-      currentUser={{ id: dbUser.id }}
+      currentUser={{ id: dbUser.id, role: dbUser.role }}
     />
   );
 }

@@ -37,7 +37,7 @@ export async function POST() {
       email: normalizedEmail,
     });
 
-    const { name, phone, room, role } = user.user_metadata;
+    const { name, phone, room } = user.user_metadata;
 
     const existingById = await prisma.user.findUnique({
       where: { id: user.id },
@@ -58,7 +58,6 @@ export async function POST() {
           name: name ?? existingByEmail.name,
           phone: phone ?? existingByEmail.phone,
           room: room ?? existingByEmail.room,
-          role: role ?? existingByEmail.role,
           emailVerified: user.email_confirmed_at
             ? new Date(user.email_confirmed_at)
             : existingByEmail.emailVerified,
@@ -74,7 +73,6 @@ export async function POST() {
           name: name ?? existingById.name,
           phone: phone ?? existingById.phone,
           room: room ?? existingById.room,
-          role: role ?? existingById.role,
           emailVerified: user.email_confirmed_at
             ? new Date(user.email_confirmed_at)
             : existingById.emailVerified,
@@ -89,7 +87,6 @@ export async function POST() {
           name: name ?? existingByEmail.name,
           phone: phone ?? existingByEmail.phone,
           room: room ?? existingByEmail.room,
-          role: role ?? existingByEmail.role,
           emailVerified: user.email_confirmed_at
             ? new Date(user.email_confirmed_at)
             : existingByEmail.emailVerified,
@@ -105,7 +102,7 @@ export async function POST() {
           name: name ?? null,
           phone: phone ?? null,
           room: room ?? null,
-          role: role ?? "user",
+          role: "user",
           emailVerified: user.email_confirmed_at
             ? new Date(user.email_confirmed_at)
             : null,

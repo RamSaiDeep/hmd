@@ -7,6 +7,14 @@ import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
+import {
+  canAccessAdminPanel,
+  canAccessMemberDashboard,
+  canAccessSuperuserPanel,
+  getRoleBadgeClass,
+  getRoleLabel,
+  parseUserRole,
+} from "@/lib/roles";
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "2-digit",
@@ -37,6 +45,7 @@ export default function DashboardPage() {
     }>
   >([]);
   const [musicRequests, setMusicRequests] = useState<any[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("user");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -57,12 +66,14 @@ export default function DashboardPage() {
 
       setUser(user);
 
+      await fetch("/api/auth/sync-user", { method: "POST" });
+
       // Fetch user role
       try {
         const roleResponse = await fetch("/api/user/me", { cache: "no-store" });
         if (roleResponse.ok) {
           const roleData = await roleResponse.json();
-          setUserRole(roleData.role === "admin" || roleData.role === "member" ? roleData.role : "user");
+          setUserRole(parseUserRole(roleData.role));
         }
       } catch (roleError) {
         console.error("Role fetch error:", roleError);
@@ -190,12 +201,8 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-2xl font-semibold">My Dashboard</h1>
-            <span className={`text-xs px-2 py-1 rounded ${
-              userRole === 'admin' ? 'bg-red-100 text-red-800' :
-              userRole === 'member' ? 'bg-blue-100 text-blue-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {userRole === 'admin' ? 'Admin' : userRole === 'member' ? 'Member' : 'User'}
+            <span className={`text-xs px-2 py-1 rounded ${getRoleBadgeClass(userRole)}`}>
+              {getRoleLabel(userRole)}
             </span>
           </div>
           <p className="text-muted-foreground">Welcome back, {userName}</p>
@@ -209,9 +216,19 @@ export default function DashboardPage() {
           <Link href="/category/music-programs" className={cn(buttonVariants({ variant: "outline" }))}>
             Music request
           </Link>
-          {userRole === 'admin' && (
+          {userRole === "member" && (
+            <Link href="/member" className={cn(buttonVariants({ variant: "outline" }))}>
+              Member Dashboard
+            </Link>
+          )}
+          {userRole === "admin" && (
             <Link href="/admin" className={cn(buttonVariants({ variant: "outline" }))}>
               Admin Panel
+            </Link>
+          )}
+          {userRole === "superuser" && (
+            <Link href="/superuser" className={cn(buttonVariants({ variant: "outline" }))}>
+              Super User Panel
             </Link>
           )}
         </div>
@@ -253,9 +270,12 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell>
                       {c.photoUrl ? (
-                        <a href={c.photoUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                        <button
+                          onClick={() => setSelectedImage(c.photoUrl!)}
+                          className="text-blue-500 hover:underline"
+                        >
                           View
-                        </a>
+                        </button>
                       ) : "—"}
                     </TableCell>
                     <TableCell>{c.status}</TableCell>
@@ -411,6 +431,28 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-h-full max-w-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -right-4 -top-4 rounded-full bg-background p-1 text-foreground shadow-md hover:bg-muted"
+            >
+              ✕
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedImage}
+              alt="Complaint attached photo"
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain bg-white"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
