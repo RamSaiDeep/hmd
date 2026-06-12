@@ -23,8 +23,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HMD - Hostel Maintenance Department",
-  description: "Professional technical support for all hostel events and maintenance needs. Sound, light, and expert craftsmanship at your service.",
+  title: "HMD - Hostel Maintenance & Media Services",
+  description: "Professional technical support, maintenance solutions, and studio recording services. Book the SRDRS studio or request sound/light event support.",
+  keywords: ["Hostel Maintenance", "SRDRS Booking", "Studio Recording", "Sound System", "Lighting Support", "HMD"],
+  metadataBase: new URL("https://hmd-hostel.vercel.app"),
 };
 
 export const viewport: Viewport = {
