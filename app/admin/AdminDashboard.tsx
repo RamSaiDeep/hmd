@@ -23,6 +23,26 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 
+function formatTimeTo12Hour(timeStr?: string | null): string {
+  if (!timeStr) return "—";
+  if (timeStr.toUpperCase().includes("AM") || timeStr.toUpperCase().includes("PM")) {
+    return timeStr;
+  }
+  const parts = timeStr.split(":");
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    if (!isNaN(hours)) {
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12; // 0 should be 12
+      return `${hours}:${minutes} ${ampm}`;
+    }
+  }
+  return timeStr;
+}
+
+
 type ComplaintItem = {
   id: string;
   place: string;
@@ -55,10 +75,12 @@ type EventItem = {
   eventName: string;
   organizerName: string;
   eventDate: string;
+  eventTime?: string | null;
   departments: string[];
   status: string;
   memberResponse?: string | null;
 };
+
 
 type MusicRequestItem = {
   id: string;
@@ -394,10 +416,12 @@ export default function AdminDashboard({
       
       finalAlternatives = {
         ...alternatives,
+        time: formatTimeTo12Hour(alternatives.time),
         soundItems: originalSoundStr === newSoundStr ? null : alternatives.soundItems,
         lighting: originalLightStr === newLightStr ? null : newLightArr
       };
     }
+
 
     updateMusicRequest(selectedMusic.id, status, response, finalAlternatives);
     closeMusicModal();
@@ -652,7 +676,9 @@ export default function AdminDashboard({
                   <tr key={event.id} className="border-t border-border">
                     <td className="px-3 py-2">{event.eventName}</td>
                     <td className="px-3 py-2">{event.organizerName}</td>
-                    <td className="px-3 py-2">{event.eventDate}</td>
+                    <td className="px-3 py-2">
+                       {event.eventDate} {event.eventTime && `at ${formatTimeTo12Hour(event.eventTime)}`}
+                    </td>
                     <td className="px-3 py-2">{event.departments.join(", ")}</td>
                     <td className="px-3 py-2">{event.status}</td>
                     <td className="px-3 py-2">{event.memberResponse || "No response yet"}</td>
@@ -717,14 +743,14 @@ export default function AdminDashboard({
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <div className={music.alternativeTime ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>
-                        {music.eventTime || "Not specified"}
-                      </div>
-                      {music.alternativeTime && (
-                        <div className="text-yellow-700 font-medium mt-1 text-xs bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded inline-block">
-                          Alt: {music.alternativeTime}
-                        </div>
-                      )}
+                       <div className={music.alternativeTime ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>
+                         {formatTimeTo12Hour(music.eventTime)}
+                       </div>
+                       {music.alternativeTime && (
+                         <div className="text-yellow-700 font-medium mt-1 text-xs bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded inline-block">
+                           Alt: {formatTimeTo12Hour(music.alternativeTime)}
+                         </div>
+                       )}
                     </td>
                     <td className="px-3 py-2">
                       <div className={music.alternativeVenue ? "line-through text-muted-foreground opacity-70 text-xs" : ""}>
@@ -950,7 +976,7 @@ export default function AdminDashboard({
                 <p><strong>Event:</strong> {selectedMusic.eventName}</p>
                 <p><strong>Organizer:</strong> {selectedMusic.organizer}</p>
                 <p><strong>Date:</strong> {selectedMusic.eventDate}</p>
-                <p><strong>Time:</strong> {selectedMusic.eventTime || 'Not specified'}</p>
+                <p><strong>Time:</strong> {formatTimeTo12Hour(selectedMusic.eventTime)}</p>
                 <p><strong>Venue:</strong> {selectedMusic.venue}</p>
                 <p><strong>Lighting:</strong> {selectedMusic.needsLight ? 'Yes' : 'No'}</p>
               </div>

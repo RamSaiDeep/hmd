@@ -4,6 +4,18 @@ import { useState } from "react";
 // Each row in the Dhwani requirements table
 type DhwaniRow = { item: string; quantity: string };
 
+function convertTo12HourFormat(time24: string): string {
+  if (!time24) return "";
+  const [hoursStr, minutesStr] = time24.split(":");
+  let hours = parseInt(hoursStr, 10);
+  const minutes = minutesStr;
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+
 export default function EventSupport() {
   const [submitted, setSubmitted] = useState(false);
 
@@ -11,6 +23,30 @@ export default function EventSupport() {
   const [dhwani, setDhwani] = useState(false);
   const [prakash, setPrakash] = useState(false);
   const [kriti, setKriti] = useState(false);
+
+  // Date and Time state
+  const [eventDate, setEventDate] = useState("");
+  const [eventTime, setEventTime] = useState("");
+
+  const getTwoMonthRange = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const min = `${yyyy}-${mm}-${dd}`;
+
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 2);
+    const max_yyyy = maxDate.getFullYear();
+    const max_mm = String(maxDate.getMonth() + 1).padStart(2, '0');
+    const max_dd = String(maxDate.getDate()).padStart(2, '0');
+    const max = `${max_yyyy}-${max_mm}-${max_dd}`;
+    return { min, max };
+  };
+
+  const { min: minDateStr, max: maxDateStr } = getTwoMonthRange();
+
+
 
   // Dhwani - dynamic table rows, start with 2 empty rows
   const [dhwaniRows, setDhwaniRows] = useState<DhwaniRow[]>([
@@ -53,9 +89,9 @@ export default function EventSupport() {
     // Get form values
     const eventName = (document.getElementById('eventName') as HTMLInputElement)?.value || '';
     const organizerName = (document.getElementById('organizerName') as HTMLInputElement)?.value || '';
-    const eventDate = (document.getElementById('eventDate') as HTMLInputElement)?.value || '';
-    const eventTime = (document.getElementById('eventTime') as HTMLInputElement)?.value || '';
+
     const additionalNotes = (document.getElementById('additionalNotes') as HTMLTextAreaElement)?.value || '';
+
     
     // Validate required fields
     if (!eventName.trim() || !organizerName.trim() || !eventDate) {
@@ -74,7 +110,7 @@ export default function EventSupport() {
       eventName,
       organizerName,
       eventDate,
-      eventTime,
+      eventTime: convertTo12HourFormat(eventTime),
       venue,
       departments,
       dhwaniItems: dhwani ? dhwaniRows.filter(row => row.item.trim() && row.quantity.trim()) : undefined,
@@ -172,17 +208,30 @@ export default function EventSupport() {
                   <input
                     id="eventDate"
                     type="date"
+                    min={minDateStr}
+                    max={maxDateStr}
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
                     className="rounded-xl px-4 py-3 text-sm text-foreground border bg-background focus:outline-none focus:border-primary"
                   />
                 </div>
+
                 <div className="flex flex-col gap-1">
                   <label className="text-sm text-muted-foreground" htmlFor="eventTime">Event Time</label>
                   <input
                     id="eventTime"
                     type="time"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
                     className="rounded-xl px-4 py-3 text-sm text-foreground border bg-background focus:outline-none focus:border-primary"
                   />
+                  {eventTime && (
+                    <p className="mt-1 text-xs text-muted-foreground font-medium">
+                      Selected time: <span className="text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">{convertTo12HourFormat(eventTime)}</span>
+                    </p>
+                  )}
                 </div>
+
               </div>
 
               {/* Department selection */}

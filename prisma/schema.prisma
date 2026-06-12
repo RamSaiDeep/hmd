@@ -30,6 +30,7 @@ model User {
   complaints    Complaint[]
   bookings      StudioBooking[]
   musicRequests MusicRequest[]
+  eventRequests EventRequest[]
   acceptedComplaints ComplaintAcceptance[]
   acceptedEvents     EventAcceptance[]
   acceptedMusic      MusicAcceptance[]
@@ -122,6 +123,7 @@ model ComplaintAcceptance {
 
 model EventRequest {
   id              String   @id @default(uuid())
+  userId          String?
   eventName       String
   organizerName   String
   eventDate       String
@@ -137,7 +139,10 @@ model EventRequest {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   acceptances     EventAcceptance[]
+
+  @@index([userId])
 }
 
 model EventAcceptance {
@@ -207,15 +212,19 @@ model MusicAcceptance {
 //////////////////////////////////////////////////////
 
 model StudioBooking {
-  id          String   @id @default(uuid())
-  userId      String
-  day         String
-  slot        String
-  purpose     String
-  description String
-  status      String   @default("Pending") // Pending, Confirmed, Cancelled
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(uuid())
+  userId            String
+  day               String
+  slot              String
+  purpose           String
+  description       String
+  status            String   @default("Pending") // Pending, Confirmed, Cancelled
+  bookingName       String?
+  recordingTime     String?
+  artistName        String?
+  vocalOrInstrument String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   acceptances StudioAcceptance[]

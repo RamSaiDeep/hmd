@@ -60,6 +60,7 @@ type EventItem = {
   eventName: string;
   organizerName: string;
   eventDate: string;
+  eventTime?: string | null;
   departments: string[];
   status: string;
   memberResponse?: string | null;
@@ -68,12 +69,17 @@ type EventItem = {
   acceptedMembers: Array<{ id: string; name?: string | null; email?: string | null; phone?: string | null }>;
 };
 
+
 type StudioItem = {
   id: string;
   day: string;
   slot: string;
   purpose: string;
   description: string;
+  bookingName?: string | null;
+  recordingTime?: string | null;
+  artistName?: string | null;
+  vocalOrInstrument?: string | null;
   status: string;
   user?: { name?: string | null; email?: string | null; phone?: string | null } | null;
   createdAt: string;
@@ -88,6 +94,26 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   month: "2-digit",
   year: "numeric",
 });
+
+function formatTimeTo12Hour(timeStr?: string | null): string {
+  if (!timeStr) return "—";
+  if (timeStr.toUpperCase().includes("AM") || timeStr.toUpperCase().includes("PM")) {
+    return timeStr;
+  }
+  const parts = timeStr.split(":");
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    if (!isNaN(hours)) {
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12; // 0 should be 12
+      return `${hours}:${minutes} ${ampm}`;
+    }
+  }
+  return timeStr;
+}
+
 
 export default function SuperUserDashboard({
   users,
@@ -369,7 +395,10 @@ export default function SuperUserDashboard({
                         phone={m.user?.phone}
                       />
                     </td>
-                    <td className="px-3 py-2">{m.eventDate}</td>
+                    <td className="px-3 py-2">
+                      {m.eventDate} {m.eventTime && `at ${formatTimeTo12Hour(m.eventTime)}`}
+                    </td>
+
                     <td className="px-3 py-2">{m.venue}</td>
                     <td className="px-3 py-2">{m.status}</td>
                     <td className="px-3 py-2">
@@ -425,7 +454,10 @@ export default function SuperUserDashboard({
                   <tr key={e.id} className="border-t border-border">
                     <td className="px-3 py-2 font-medium">{e.eventName}</td>
                     <td className="px-3 py-2">{e.organizerName}</td>
-                    <td className="px-3 py-2">{e.eventDate}</td>
+                    <td className="px-3 py-2">
+                      {e.eventDate} {e.eventTime && `at ${formatTimeTo12Hour(e.eventTime)}`}
+                    </td>
+
                     <td className="px-3 py-2">{e.departments.join(", ")}</td>
                     <td className="px-3 py-2">{e.status}</td>
                     <td className="px-3 py-2">{e.memberResponse || "—"}</td>
@@ -466,7 +498,12 @@ export default function SuperUserDashboard({
               <tr>
                 <th className="px-3 py-2">Day</th>
                 <th className="px-3 py-2">Slot</th>
+                <th className="px-3 py-2">Booking Name</th>
+                <th className="px-3 py-2">Recording Time</th>
+                <th className="px-3 py-2">Artist Name</th>
+                <th className="px-3 py-2">Vocal/Instrument</th>
                 <th className="px-3 py-2">Purpose</th>
+                <th className="px-3 py-2">Description</th>
                 <th className="px-3 py-2">Requested By</th>
                 <th className="px-3 py-2">Date</th>
                 <th className="px-3 py-2">Status</th>
@@ -476,13 +513,19 @@ export default function SuperUserDashboard({
             </thead>
             <tbody>
               {studioBookings.length === 0 ? (
-                <tr><td colSpan={8} className="px-3 py-4 text-center text-muted-foreground">No studio bookings found.</td></tr>
+                <tr><td colSpan={13} className="px-3 py-4 text-center text-muted-foreground">No studio bookings found.</td></tr>
               ) : (
                 studioBookings.map((s) => (
                   <tr key={s.id} className="border-t border-border">
                     <td className="px-3 py-2 font-medium">{s.day}</td>
-                    <td className="px-3 py-2">{s.slot}</td>
+                    <td className="px-3 py-2">{formatTimeTo12Hour(s.slot)}</td>
+                    <td className="px-3 py-2">{s.bookingName || "—"}</td>
+                    <td className="px-3 py-2">{formatTimeTo12Hour(s.recordingTime)}</td>
+
+                    <td className="px-3 py-2">{s.artistName || "—"}</td>
+                    <td className="px-3 py-2">{s.vocalOrInstrument || "—"}</td>
                     <td className="px-3 py-2">{s.purpose}</td>
+                    <td className="px-3 py-2 max-w-xs truncate" title={s.description}>{s.description}</td>
                     <td className="px-3 py-2">
                       <ContactReveal
                         label={s.user?.name || s.user?.email || "—"}

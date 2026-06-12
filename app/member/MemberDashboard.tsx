@@ -11,6 +11,26 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 
+function formatTimeTo12Hour(timeStr?: string | null): string {
+  if (!timeStr) return "—";
+  if (timeStr.toUpperCase().includes("AM") || timeStr.toUpperCase().includes("PM")) {
+    return timeStr;
+  }
+  const parts = timeStr.split(":");
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    if (!isNaN(hours)) {
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12; // 0 should be 12
+      return `${hours}:${minutes} ${ampm}`;
+    }
+  }
+  return timeStr;
+}
+
+
 type ComplaintItem = {
   id: string;
   place: string;
@@ -43,9 +63,11 @@ type EventItem = {
   eventName: string;
   organizerName: string;
   eventDate: string;
+  eventTime?: string | null;
   departments: string[];
   status: string;
   memberResponse?: string | null;
+
   acceptanceCount: number;
   acceptedMembers: Array<{ id: string; name?: string | null; email?: string | null; phone?: string | null; }>;
 };
@@ -74,6 +96,10 @@ type StudioItem = {
   slot: string;
   purpose: string;
   description: string;
+  bookingName?: string | null;
+  recordingTime?: string | null;
+  artistName?: string | null;
+  vocalOrInstrument?: string | null;
   status: string;
   user?: { name?: string | null; email?: string | null; phone?: string | null; } | null;
   createdAt: string;
@@ -407,7 +433,10 @@ export default function MemberDashboard({
                       <tr className="border-t border-border">
                         <td className="px-3 py-2">{e.eventName}</td>
                         <td className="px-3 py-2">{e.organizerName}</td>
-                        <td className="px-3 py-2">{e.eventDate}</td>
+                        <td className="px-3 py-2">
+                          {e.eventDate} {e.eventTime && `at ${formatTimeTo12Hour(e.eventTime)}`}
+                        </td>
+
                         <td className="px-3 py-2">{e.departments.join(", ")}</td>
                         <td className="px-3 py-2">{e.status}</td>
                         <td className="px-3 py-2">{e.memberResponse || "No response yet"}</td>
@@ -513,7 +542,10 @@ export default function MemberDashboard({
                           />
                         </td>
                         <td className="px-3 py-2">{m.organizer}</td>
-                        <td className="px-3 py-2">{m.eventDate}</td>
+                        <td className="px-3 py-2">
+                          {m.eventDate} {m.eventTime && `at ${formatTimeTo12Hour(m.eventTime)}`}
+                        </td>
+
                         <td className="px-3 py-2">{m.status}</td>
                         <td className="px-3 py-2">
                           {m.acceptanceCount >= musicLimit ? (
@@ -562,7 +594,9 @@ export default function MemberDashboard({
                 <thead className="bg-muted/50 text-left">
                   <tr>
                     <th className="px-3 py-2">Day & Slot</th>
+                    <th className="px-3 py-2">Booking Details</th>
                     <th className="px-3 py-2">Purpose</th>
+                    <th className="px-3 py-2">Description</th>
                     <th className="px-3 py-2">User</th>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Accepted By</th>
@@ -574,8 +608,18 @@ export default function MemberDashboard({
                     const isAssigned = s.acceptedMembers.some((member) => member.id === currentUser.id);
                     return (
                       <tr key={s.id} className="border-t border-border">
-                        <td className="px-3 py-2 font-medium">{s.day} <br/><span className="text-xs text-muted-foreground">{s.slot}</span></td>
+                        <td className="px-3 py-2 font-medium">{s.day} <br/><span className="text-xs text-muted-foreground">{formatTimeTo12Hour(s.slot)}</span></td>
+                        <td className="px-3 py-2">
+                          <div className="text-xs space-y-0.5">
+                            <p><strong>Name:</strong> {s.bookingName || "—"}</p>
+                            <p><strong>Time:</strong> {formatTimeTo12Hour(s.recordingTime)}</p>
+
+                            <p><strong>Artist:</strong> {s.artistName || "—"}</p>
+                            <p><strong>Vocal/Inst:</strong> {s.vocalOrInstrument || "—"}</p>
+                          </div>
+                        </td>
                         <td className="px-3 py-2">{s.purpose}</td>
+                        <td className="px-3 py-2 max-w-xs truncate" title={s.description}>{s.description}</td>
                         <td className="px-3 py-2">
                           <ContactReveal
                             label={s.user?.name || s.user?.email || "Unknown"}

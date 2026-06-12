@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { Prisma } from "@prisma/client";
+import { syncAuthUserToPrisma } from "@/lib/sync-user";
 
 type EventRequestBody = {
   eventName?: string;
@@ -32,24 +33,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Ensure user exists in database using the sync API
+    // Ensure user exists in database by syncing them directly
     console.log("Events API - Ensuring user sync for:", user.email);
-    
-    const syncResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/user/ensure-sync`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    if (!syncResponse.ok) {
-      const syncError = await syncResponse.json().catch(() => ({}));
-      console.error("Events API - User sync failed:", syncError);
-      return NextResponse.json({ 
-        error: "User sync failed: " + (syncError.error || "Unknown sync error") 
-      }, { status: 500 });
-    }
-
-    const syncResult = await syncResponse.json();
-    console.log("Events API - User sync successful:", syncResult.message);
+    await syncAuthUserToPrisma(user);
+    console.log("Events API - User sync successful");
 
     const dhwaniItems =
       Array.isArray(body.dhwaniItems) && body.dhwaniItems.length > 0
@@ -58,6 +45,7 @@ export async function POST(req: Request) {
 
     const eventRequest = await prisma.eventRequest.create({
       data: {
+        userId: user.id,
         eventName: body.eventName.trim(),
         organizerName: body.organizerName.trim(),
         eventDate: body.eventDate.trim(),

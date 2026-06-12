@@ -22,7 +22,27 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 
+function formatTimeTo12Hour(timeStr?: string | null): string {
+  if (!timeStr) return "—";
+  if (timeStr.toUpperCase().includes("AM") || timeStr.toUpperCase().includes("PM")) {
+    return timeStr;
+  }
+  const parts = timeStr.split(":");
+  if (parts.length >= 2) {
+    let hours = parseInt(parts[0], 10);
+    const minutes = parts[1];
+    if (!isNaN(hours)) {
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12; // 0 should be 12
+      return `${hours}:${minutes} ${ampm}`;
+    }
+  }
+  return timeStr;
+}
+
 export default function DashboardPage() {
+
   const [user, setUser] = useState<User | null>(null);
   const [complaints, setComplaints] = useState<
     Array<{
@@ -45,6 +65,8 @@ export default function DashboardPage() {
     }>
   >([]);
   const [musicRequests, setMusicRequests] = useState<any[]>([]);
+  const [eventRequests, setEventRequests] = useState<any[]>([]);
+  const [studioBookings, setStudioBookings] = useState<any[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("user");
   const [loading, setLoading] = useState(true);
@@ -80,11 +102,13 @@ export default function DashboardPage() {
         setUserRole("user");
       }
 
-      // Fetch complaints and music requests
+      // Fetch complaints, music requests, event requests, and studio bookings
       try {
-        const [complaintsResponse, musicResponse] = await Promise.all([
+        const [complaintsResponse, musicResponse, eventsResponse, bookingsResponse] = await Promise.all([
           fetch("/api/complaints"),
-          fetch("/api/user/music-requests")
+          fetch("/api/user/music-requests"),
+          fetch("/api/user/event-requests"),
+          fetch("/api/user/bookings")
         ]);
         
         if (complaintsResponse.ok) {
@@ -95,6 +119,16 @@ export default function DashboardPage() {
         if (musicResponse.ok) {
           const musicData = await musicResponse.json();
           setMusicRequests(musicData.musicRequests || []);
+        }
+
+        if (eventsResponse.ok) {
+          const eventsData = await eventsResponse.json();
+          setEventRequests(eventsData.eventRequests || []);
+        }
+
+        if (bookingsResponse.ok) {
+          const bookingsData = await bookingsResponse.json();
+          setStudioBookings(bookingsData.bookings || []);
         }
       } catch (dbError) {
         console.error("Database error:", dbError);
@@ -114,9 +148,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const [complaintsResponse, musicResponse] = await Promise.all([
+        const [complaintsResponse, musicResponse, eventsResponse, bookingsResponse] = await Promise.all([
           fetch("/api/complaints"),
-          fetch("/api/user/music-requests")
+          fetch("/api/user/music-requests"),
+          fetch("/api/user/event-requests"),
+          fetch("/api/user/bookings")
         ]);
         
         if (complaintsResponse.ok) {
@@ -127,6 +163,16 @@ export default function DashboardPage() {
         if (musicResponse.ok) {
           const musicData = await musicResponse.json();
           setMusicRequests(musicData.musicRequests || []);
+        }
+
+        if (eventsResponse.ok) {
+          const eventsData = await eventsResponse.json();
+          setEventRequests(eventsData.eventRequests || []);
+        }
+
+        if (bookingsResponse.ok) {
+          const bookingsData = await bookingsResponse.json();
+          setStudioBookings(bookingsData.bookings || []);
         }
       } catch (error) {
         console.error("Auto-refresh error:", error);
@@ -209,28 +255,31 @@ export default function DashboardPage() {
           {userRoom && <p className="text-muted-foreground">Room: {userRoom}</p>}
         </div>
 
-        <div className="flex gap-2">
-          <Link href="/register-complaint" className={cn(buttonVariants())}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/register-complaint"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
             New complaint
           </Link>
-          <Link href="/category/music-programs" className={cn(buttonVariants({ variant: "outline" }))}>
+          <Link
+            href="/category/events"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            Event support
+          </Link>
+          <Link
+            href="/category/music-programs"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
             Music request
           </Link>
-          {userRole === "member" && (
-            <Link href="/member" className={cn(buttonVariants({ variant: "outline" }))}>
-              Member Dashboard
-            </Link>
-          )}
-          {userRole === "admin" && (
-            <Link href="/admin" className={cn(buttonVariants({ variant: "outline" }))}>
-              Admin Panel
-            </Link>
-          )}
-          {userRole === "superuser" && (
-            <Link href="/superuser" className={cn(buttonVariants({ variant: "outline" }))}>
-              Super User Panel
-            </Link>
-          )}
+          <Link
+            href="/category/srdrs"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            SRDRS booking
+          </Link>
         </div>
       </div>
 
@@ -322,8 +371,9 @@ export default function DashboardPage() {
                   <div>
                     <h3 className="font-semibold text-foreground">{request.eventName}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {request.eventDate} {request.eventTime && `at ${request.eventTime}`} - {request.venue}
+                      {request.eventDate} {request.eventTime && `at ${formatTimeTo12Hour(request.eventTime)}`} - {request.venue}
                     </p>
+
                   </div>
                   <span className={`text-xs px-2 py-1 rounded ${
                     request.status === 'Accepted' || request.status === 'Alternative Accepted' ? 'bg-green-100 text-green-800' :
@@ -377,7 +427,8 @@ export default function DashboardPage() {
                     <p className="text-sm font-medium text-blue-900 mb-2">Alternative Arrangement:</p>
                     <div className="space-y-1 text-sm text-blue-800">
                       {request.alternativeDate && <p><strong>Date:</strong> {request.alternativeDate}</p>}
-                      {request.alternativeTime && <p><strong>Time:</strong> {request.alternativeTime}</p>}
+                      {request.alternativeTime && <p><strong>Time:</strong> {formatTimeTo12Hour(request.alternativeTime)}</p>}
+
                       {request.alternativeVenue && <p><strong>Venue:</strong> {request.alternativeVenue}</p>}
                       {Array.isArray(request.alternativeSoundItems) && request.alternativeSoundItems.length > 0 && (
                         <div>
@@ -428,6 +479,125 @@ export default function DashboardPage() {
                 </p>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Events Section */}
+      <div className="mt-8">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold">My Event Support Requests</h2>
+          <span className="text-sm text-muted-foreground">{eventRequests.length}</span>
+        </div>
+
+        {eventRequests.length === 0 ? (
+          <p className="mt-4 text-muted-foreground">No event support requests yet</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {eventRequests.map((request) => (
+              <div key={request.id} className="rounded-xl border p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{request.eventName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {request.eventDate} {request.eventTime && `at ${formatTimeTo12Hour(request.eventTime)}`} - Organizer: {request.organizerName}
+                    </p>
+
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    request.status === 'Confirmed' || request.status === 'Accepted' ? 'bg-green-100 text-green-800' :
+                    request.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {request.status}
+                  </span>
+                </div>
+
+                {/* Departments */}
+                {request.departments && request.departments.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-sm font-medium text-foreground mb-1">Departments:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {request.departments.map((dept: string, idx: number) => (
+                        <span key={idx} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
+                          {dept}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Member/Admin Response */}
+                {request.memberResponse && (
+                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm font-medium text-foreground mb-1">Response:</p>
+                    <p className="text-sm text-muted-foreground">{request.memberResponse}</p>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground mt-3">
+                  Submitted: {dateFormatter.format(new Date(request.createdAt))}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SRDRS Bookings Section */}
+      <div className="mt-8 mb-8">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold">My SRDRS Bookings</h2>
+          <span className="text-sm text-muted-foreground">{studioBookings.length}</span>
+        </div>
+
+        {studioBookings.length === 0 ? (
+          <p className="mt-4 text-muted-foreground">No bookings yet</p>
+        ) : (
+          <div className="mt-4 rounded-xl border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Day</TableHead>
+                  <TableHead>Slot</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Recording Time</TableHead>
+                  <TableHead>Artist Name</TableHead>
+                  <TableHead>Vocal/Instrument</TableHead>
+                  <TableHead>Purpose</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date Booked</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {studioBookings.map((b) => (
+                  <TableRow key={b.id}>
+                    <TableCell className="font-semibold">{b.day}</TableCell>
+                    <TableCell>{formatTimeTo12Hour(b.slot)}</TableCell>
+                    <TableCell>{b.bookingName || "—"}</TableCell>
+                    <TableCell>{formatTimeTo12Hour(b.recordingTime)}</TableCell>
+
+                    <TableCell>{b.artistName || "—"}</TableCell>
+                    <TableCell>{b.vocalOrInstrument || "—"}</TableCell>
+                    <TableCell>{b.purpose}</TableCell>
+                    <TableCell className="whitespace-pre-wrap max-w-xs align-top">
+                      {b.description || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        b.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
+                        b.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {b.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>{dateFormatter.format(new Date(b.createdAt))}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>

@@ -4,8 +4,39 @@ import { useState } from "react";
 // Dhwani row type for sound requirements
 type DhwaniRow = { item: string; quantity: string };
 
+function convertTo12HourFormat(time24: string): string {
+  if (!time24) return "";
+  const [hoursStr, minutesStr] = time24.split(":");
+  let hours = parseInt(hoursStr, 10);
+  const minutes = minutesStr;
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+
 export default function Events() {
   const [submitted, setSubmitted] = useState(false);
+
+  const getTwoMonthRange = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const min = `${yyyy}-${mm}-${dd}`;
+
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 2);
+    const max_yyyy = maxDate.getFullYear();
+    const max_mm = String(maxDate.getMonth() + 1).padStart(2, '0');
+    const max_dd = String(maxDate.getDate()).padStart(2, '0');
+    const max = `${max_yyyy}-${max_mm}-${max_dd}`;
+    return { min, max };
+  };
+
+  const { min: minDateStr, max: maxDateStr } = getTwoMonthRange();
+
 
   // Support requirements
   const [needsSound, setNeedsSound] = useState(false);
@@ -83,8 +114,9 @@ export default function Events() {
       eventName,
       organizerName,
       eventDate,
-      eventTime,
+      eventTime: convertTo12HourFormat(eventTime),
       venue,
+
       departments,
       dhwaniItems: needsSound ? soundRows : [],
       prakashVenue: needsLight ? venue : "",
@@ -199,11 +231,14 @@ export default function Events() {
                   <input
                     id="eventDate"
                     type="date"
+                    min={minDateStr}
+                    max={maxDateStr}
                     value={eventDate}
                     onChange={(e) => setEventDate(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
+
                 </div>
                 <div>
                   <label htmlFor="eventTime" className="block text-sm font-medium text-gray-700 mb-2">
@@ -216,6 +251,12 @@ export default function Events() {
                     onChange={(e) => setEventTime(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
+                  {eventTime && (
+                    <p className="mt-1.5 text-sm text-gray-600 font-medium">
+                      Selected time: <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{convertTo12HourFormat(eventTime)}</span>
+                    </p>
+                  )}
+
                 </div>
               </div>
 
