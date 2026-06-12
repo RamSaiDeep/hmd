@@ -41,7 +41,7 @@ export default function Hero() {
         </h1>
 
         <p className="mb-10 max-w-2xl text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
-          Professional technical support for all hostel events and maintenance needs. Sound, light, and expert craftsmanship operated by students, for students.
+          Professional technical support for all events and maintenance needs at the <strong>Sri Sathya Sai Senior Boys Hostel (SSSSBH)</strong>. Sound, light, and expert craftsmanship operated by students, for students.
         </p>
 
         {/* CTA buttons */}
