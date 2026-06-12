@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   title: "HMD - Hostel Maintenance & Media Services",
   description: "Professional technical support, maintenance solutions, and studio recording services. Book the SRDRS studio or request sound/light event support.",
   keywords: ["Hostel Maintenance", "SRDRS Booking", "Studio Recording", "Sound System", "Lighting Support", "HMD"],
-  metadataBase: new URL("https://hmd-hostel.vercel.app"),
+  metadataBase: new URL("https://psn-hmd.vercel.app"),
 };
 
 export const viewport: Viewport = {

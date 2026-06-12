@@ -17,6 +17,6 @@ export default function robots(): MetadataRoute.Robots {
       ],
     },
     // Replace with your production domain name once mapped in Vercel
-    sitemap: "https://hmd-hostel.vercel.app/sitemap.xml",
+    sitemap: "https://psn-hmd.vercel.app/sitemap.xml",
   };
 }
