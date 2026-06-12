@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
-import { Inter, Outfit, Geist_Mono } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
@@ -15,11 +15,6 @@ const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-heading",
   weight: ["600", "700", "800"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", inter.variable, outfit.variable, geistMono.variable)}
+      className={cn("h-full", "antialiased", inter.variable, outfit.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors">

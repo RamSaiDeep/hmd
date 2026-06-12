@@ -9,7 +9,7 @@ export default function Hero() {
       {/* Immersive Full-Screen Background Image */}
       <div className="absolute inset-0 z-0">
         <Image 
-          src="/images/hero-bg.JPG" 
+          src="/images/hero-bg.webp" 
           alt="Glowing Building Background" 
           fill
           style={{
