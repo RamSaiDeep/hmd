@@ -131,19 +131,19 @@ export default function Home() {
               description="Submit a new maintenance complaint or service request"
             />
             <QuickActionCard
-              href="#"
+              href="/dashboard"
               icon="📋"
               title="View My Complaints"
               description="Track the status of your submitted complaints"
             />
             <QuickActionCard
-              href="#"
+              href="/category/srdrs"
               icon="🎙️"
               title="Studio Booking"
               description="Reserve the SRDRS recording studio for your event"
             />
             <QuickActionCard
-              href="#"
+              href="/category/events"
               icon="🔊"
               title="Sound & Lighting"
               description="Request sound system or lighting support for events"
