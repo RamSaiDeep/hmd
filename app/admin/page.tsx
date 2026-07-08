@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { canAccessAdminPanel } from "@/lib/roles";

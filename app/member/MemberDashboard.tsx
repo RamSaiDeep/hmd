@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import ContactReveal from "@/components/ContactReveal";
+import { formatTimeTo12Hour } from "@/lib/time";
 
 import { Fragment, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -10,25 +13,6 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   month: "2-digit",
   year: "numeric",
 });
-
-function formatTimeTo12Hour(timeStr?: string | null): string {
-  if (!timeStr) return "—";
-  if (timeStr.toUpperCase().includes("AM") || timeStr.toUpperCase().includes("PM")) {
-    return timeStr;
-  }
-  const parts = timeStr.split(":");
-  if (parts.length >= 2) {
-    let hours = parseInt(parts[0], 10);
-    const minutes = parts[1];
-    if (!isNaN(hours)) {
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12; // 0 should be 12
-      return `${hours}:${minutes} ${ampm}`;
-    }
-  }
-  return timeStr;
-}
 
 
 type ComplaintItem = {
@@ -139,25 +123,6 @@ export default function MemberDashboard({
   const [searchText, setSearchText] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  function ContactReveal({
-    label,
-    email,
-    phone,
-  }: {
-    label: string;
-    email?: string | null;
-    phone?: string | null;
-  }) {
-    return (
-      <details>
-        <summary className="cursor-pointer text-blue-600 hover:underline">{label}</summary>
-        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-          <div>Email: {email || "—"}</div>
-          <div>Phone: {phone || "—"}</div>
-        </div>
-      </details>
-    );
-  }
 
   async function updateComplaint(id: string, field: string, value: string) {
     await fetch("/api/complaints/update", {

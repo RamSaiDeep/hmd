@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, NextRequest } from "next/server";
@@ -16,6 +17,13 @@ export async function GET(request: NextRequest) {
       if (!dbUser) {
         return createSecureResponse({ complaints: [] });
       }
+
+      const settingsItems = await prisma.systemSetting.findMany();
+      const settings = settingsItems.reduce((acc: Record<string, string>, s: { key: string; value: string }) => {
+        acc[s.key] = s.value;
+        return acc;
+      }, {} as Record<string, string>);
+      const complaintAcceptanceLimit = parseInt(settings.COMPLAINT_ACCEPTANCE_LIMIT || "2", 10);
 
       // 🔥 Fetch ONLY this user's complaints
       const complaints = await prisma.complaint.findMany({
@@ -49,7 +57,7 @@ export async function GET(request: NextRequest) {
             ...complaint,
             acceptanceCount,
             acceptedMembers:
-              acceptanceCount >= 2
+              acceptanceCount >= complaintAcceptanceLimit
                 ? complaint.acceptances.map((acceptance) => ({
                     id: acceptance.member.id,
                     name: acceptance.member.name,
