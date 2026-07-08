@@ -1,4 +1,5 @@
 "use client";
+import { formatTimeTo12Hour } from "@/lib/time";
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -94,25 +95,6 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   month: "2-digit",
   year: "numeric",
 });
-
-function formatTimeTo12Hour(timeStr?: string | null): string {
-  if (!timeStr) return "—";
-  if (timeStr.toUpperCase().includes("AM") || timeStr.toUpperCase().includes("PM")) {
-    return timeStr;
-  }
-  const parts = timeStr.split(":");
-  if (parts.length >= 2) {
-    let hours = parseInt(parts[0], 10);
-    const minutes = parts[1];
-    if (!isNaN(hours)) {
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12; // 0 should be 12
-      return `${hours}:${minutes} ${ampm}`;
-    }
-  }
-  return timeStr;
-}
 
 
 export default function SuperUserDashboard({
