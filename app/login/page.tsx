@@ -26,7 +26,7 @@ function LoginContent() {
   const inputClass =
     "mt-1 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30";
   const buttonClass =
-    "w-full rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-60";
+    "w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60";
   const googleClass =
     "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground hover:border-primary/60";
 
@@ -145,10 +145,10 @@ function LoginContent() {
         {mode === "login" ? "Login" : "Sign Up"}
       </h1>
 
-      {verified && <p className="text-green-400">✅ Email verified!</p>}
-      {urlError && <p className="text-red-400">❌ {urlError}</p>}
-      {error && <p className="text-red-400">❌ {error}</p>}
-      {success && <p className="text-green-400">✅ {success}</p>}
+      {verified && <p className="text-emerald-500 mb-3">✅ Email verified!</p>}
+      {urlError && <p className="text-destructive mb-3">❌ {urlError}</p>}
+      {error && <p className="text-destructive mb-3">❌ {error}</p>}
+      {success && <p className="text-emerald-500 mb-3">✅ {success}</p>}
 
       <div className="flex gap-2 mb-4">
         <button onClick={() => setMode("login")}>Login</button>
