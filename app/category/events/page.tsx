@@ -1,39 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import { getTwoMonthRange } from "@/lib/dateRange";
+import { convertTo12HourFormat } from "@/lib/time";
 import { useState } from "react";
 
 // Dhwani row type for sound requirements
 type DhwaniRow = { item: string; quantity: string };
 
-function convertTo12HourFormat(time24: string): string {
-  if (!time24) return "";
-  const [hoursStr, minutesStr] = time24.split(":");
-  let hours = parseInt(hoursStr, 10);
-  const minutes = minutesStr;
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12;
-  hours = hours ? hours : 12; // the hour '0' should be '12'
-  return `${hours}:${minutes} ${ampm}`;
-}
-
 
 export default function Events() {
   const [submitted, setSubmitted] = useState(false);
 
-  const getTwoMonthRange = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const min = `${yyyy}-${mm}-${dd}`;
-
-    const maxDate = new Date();
-    maxDate.setMonth(maxDate.getMonth() + 2);
-    const max_yyyy = maxDate.getFullYear();
-    const max_mm = String(maxDate.getMonth() + 1).padStart(2, '0');
-    const max_dd = String(maxDate.getDate()).padStart(2, '0');
-    const max = `${max_yyyy}-${max_mm}-${max_dd}`;
-    return { min, max };
-  };
 
   const { min: minDateStr, max: maxDateStr } = getTwoMonthRange();
 

@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
 "use client";
+import { formatTimeTo12Hour } from "@/lib/time";
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -22,25 +24,6 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
   month: "2-digit",
   year: "numeric",
 });
-
-function formatTimeTo12Hour(timeStr?: string | null): string {
-  if (!timeStr) return "—";
-  if (timeStr.toUpperCase().includes("AM") || timeStr.toUpperCase().includes("PM")) {
-    return timeStr;
-  }
-  const parts = timeStr.split(":");
-  if (parts.length >= 2) {
-    let hours = parseInt(parts[0], 10);
-    const minutes = parts[1];
-    if (!isNaN(hours)) {
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12; // 0 should be 12
-      return `${hours}:${minutes} ${ampm}`;
-    }
-  }
-  return timeStr;
-}
 
 
 type ComplaintItem = {
@@ -216,6 +199,8 @@ export default function AdminDashboard({
   }, [users]);
 
   async function updateComplaint(id: string, field: "status" | "priority", value: string) {
+    const previousValue = localComplaints.find(c => c.id === id)?.[field];
+
     // Optimistic update
     setLocalComplaints(prev => 
       prev.map(c => c.id === id ? { ...c, [field]: value } : c)
@@ -233,7 +218,7 @@ export default function AdminDashboard({
       console.error("Failed to update complaint:", error);
       // Revert on error
       setLocalComplaints(prev => 
-        prev.map(c => c.id === id ? { ...c, [field]: c[field] } : c)
+        prev.map(c => c.id === id ? { ...c, [field]: previousValue } : c)
       );
     }
   }
