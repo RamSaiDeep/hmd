@@ -3,44 +3,57 @@
 @import "shadcn/tailwind.css";
 
 :root {
-  --color-bg: #f8fafc;
-  --color-bg-secondary: #eef2ff;
-  --color-bg-tertiary: #e2e8f0;
-  --color-text: #0f172a;
-  --color-text-secondary: #334155;
-  --color-text-tertiary: #64748b;
-  --color-border: #cbd5e1;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  /* Dark Theme - Base Colors */
+  --color-bg: #0f1419;
+  --color-bg-secondary: #1a1f2e;
+  --color-bg-tertiary: #242b3a;
+  --color-text: #e8eef5;
+  --color-text-secondary: #b0b8c8;
+  --color-text-tertiary: #8890a0;
+  --color-border: #2a3142;
+  
+  /* Neon Accents - RGB and HEX */
+  --neon-blue: #00d4ff;
+  --neon-blue-rgb: 0, 212, 255;
+  --neon-gold: #ffd700;
+  --neon-gold-rgb: 255, 215, 0;
+  --neon-green: #39ff14;
+  --neon-green-rgb: 57, 255, 20;
+  --neon-purple: #bf00ff;
+  --neon-purple-rgb: 191, 0, 255;
+  
+  /* OkLch Color System - Dark Mode */
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.92 0.02 260);
+  --card: oklch(0.12 0.01 255);
+  --card-foreground: oklch(0.92 0.02 260);
+  --popover: oklch(0.12 0.01 255);
+  --popover-foreground: oklch(0.92 0.02 260);
   --primary: oklch(0.55 0.2 250);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.15 0.02 255);
+  --secondary-foreground: oklch(0.92 0.02 260);
+  --muted: oklch(0.25 0.02 255);
+  --muted-foreground: oklch(0.65 0.05 260);
+  --accent: oklch(0.6 0.2 45);
+  --accent-foreground: oklch(0.12 0.01 255);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: oklch(0.20 0.01 255);
+  --input: oklch(0.15 0.01 255);
   --ring: oklch(0.55 0.2 250);
   --chart-1: oklch(0.55 0.2 250);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --chart-2: oklch(0.6 0.2 45);
+  --chart-3: oklch(0.55 0.18 150);
+  --chart-4: oklch(0.5 0.2 280);
+  --chart-5: oklch(0.45 0.15 200);
   --radius: 0.5rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar: oklch(0.12 0.01 255);
+  --sidebar-foreground: oklch(0.92 0.02 260);
   --sidebar-primary: oklch(0.55 0.2 250);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-primary-foreground: oklch(0.12 0.01 255);
+  --sidebar-accent: oklch(0.6 0.2 45);
+  --sidebar-accent-foreground: oklch(0.12 0.01 255);
+  --sidebar-border: oklch(0.20 0.01 255);
   --sidebar-ring: oklch(0.55 0.2 250);
 }
 
@@ -106,6 +119,137 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--ring);
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 0 40px rgba(255, 215, 0, 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.6), 0 0 60px rgba(255, 215, 0, 0.3);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Glassmorphism Effect */
+.glass {
+  background: rgba(26, 31, 46, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 12px;
+}
+
+.glass-hover {
+  transition: all 0.3s ease;
+}
+
+.glass-hover:hover {
+  background: rgba(26, 31, 46, 0.9);
+  border-color: rgba(0, 212, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+}
+
+/* Neon Color Utilities */
+.text-neon-blue {
+  color: var(--neon-blue);
+}
+
+.text-neon-gold {
+  color: var(--neon-gold);
+}
+
+.text-neon-green {
+  color: var(--neon-green);
+}
+
+.text-neon-purple {
+  color: var(--neon-purple);
+}
+
+.bg-neon-blue {
+  background-color: var(--neon-blue);
+}
+
+.bg-neon-gold {
+  background-color: var(--neon-gold);
+}
+
+.bg-neon-green {
+  background-color: var(--neon-green);
+}
+
+.border-neon-blue {
+  border-color: var(--neon-blue);
+}
+
+.border-neon-gold {
+  border-color: var(--neon-gold);
+}
+
+.border-neon-green {
+  border-color: var(--neon-green);
 }
 
 @layer base {
